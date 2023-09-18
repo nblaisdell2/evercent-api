@@ -54,7 +54,7 @@ then
   echo ===================================
   echo "  Creating Lambda..."
   aws lambda create-function --function-name $awsLambdaName --package-type Image --code ImageUri=$awsAccountID.dkr.ecr.$awsRegion.amazonaws.com/$dockerContainerName:latest --role $awsLambdaExecRoleArn >/dev/null
-  sleep 15
+  sleep 60
   initVersion=$(aws lambda publish-version --function-name $awsLambdaName --description "Initial Version" | jq -r .Version)
   aws lambda create-alias --function-name $awsLambdaName --name latest --function-version $initVersion --description "Latest version" >/dev/null
 
@@ -69,7 +69,7 @@ then
   awsCodeBuildRoleName="codebuild-$awsLambdaName-role"
   awsCodeBuildRoleArn=$(aws iam create-role --role-name "$awsCodeBuildRoleName" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"codebuild.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}" | jq -r .Role.Arn)
   aws iam put-role-policy --role-name "$awsCodeBuildRoleName" --policy-name "codebuild-$awsLambdaName-policy" --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"Auto0\",\"Effect\":\"Allow\",\"Action\":[\"codedeploy:*\",\"codebuild:*\",\"ecr:*\",\"logs:*\",\"lambda:*\"],\"Resource\":\"*\"}]}" >/dev/null
-  sleep 10
+  sleep 20
   aws codebuild create-project --name $awsCodeBuildProjName --source "{\"type\": \"GITHUB\", \"location\": \"$awsGitHubRepoURL\", \"reportBuildStatus\": true}" --artifacts "{\"type\": \"NO_ARTIFACTS\"}" --environment "{\"type\": \"LINUX_CONTAINER\", \"image\": \"aws/codebuild/amazonlinux2-x86_64-standard:5.0\", \"computeType\": \"BUILD_GENERAL1_SMALL\", \"privilegedMode\": true, \"imagePullCredentialsType\": \"CODEBUILD\", \"environmentVariables\": [{\"name\": \"awsRegion\", \"value\": \"$awsRegion\", \"type\": \"PLAINTEXT\"},{\"name\": \"awsAccountID\", \"value\": \"$awsAccountID\", \"type\": \"PLAINTEXT\"},{\"name\": \"dockerContainerName\", \"value\": \"$dockerContainerName\", \"type\": \"PLAINTEXT\"}]}" --service-role "$awsCodeBuildRoleArn" >/dev/null
   
 
@@ -81,7 +81,7 @@ then
   awsCodeDeployRoleArn=$(aws iam create-role --role-name "$awsCodeDeployRoleName" --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"codedeploy.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}" | jq -r .Role.Arn)
   aws iam attach-role-policy --role-name $awsCodeDeployRoleName --policy-arn arn:aws:iam::aws:policy/AmazonElasticContainerRegistryPublicFullAccess >/dev/null
   aws iam attach-role-policy --role-name $awsCodeDeployRoleName --policy-arn arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda >/dev/null
-  sleep 10
+  sleep 20
 
   aws deploy create-application --application-name $awsLambdaName-deploy --compute-platform Lambda >/dev/null
   aws deploy create-deployment-group --application-name $awsLambdaName-deploy --deployment-group-name $awsLambdaName-deploy-group --service-role-arn $awsCodeDeployRoleArn --deployment-style "{\"deploymentType\": \"BLUE_GREEN\", \"deploymentOption\": \"WITH_TRAFFIC_CONTROL\"}" >/dev/null
