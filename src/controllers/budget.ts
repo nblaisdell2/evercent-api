@@ -24,6 +24,18 @@ const openURL = (url: string) => {
   require("child_process").exec(start + " " + urlFormatted);
 };
 
+export const connectToYNAB = async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { UserID } = req.query;
+
+  const url = GetURL_YNABAuthorizationPage(UserID as string);
+  openURL(url);
+  // res.redirect(url);
+};
+
 export const getBudgetData = async function (
   req: Request,
   res: Response,
