@@ -32,8 +32,8 @@ export const connectToYNAB = async function (
   const { UserID } = req.query;
 
   const url = GetURL_YNABAuthorizationPage(UserID as string);
-  openURL(url);
-  // res.redirect(url);
+  // openURL(url);
+  res.redirect(url);
 };
 
 export const getBudgetData = async function (
