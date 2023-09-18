@@ -170,6 +170,7 @@ const createAutoRunCategoryGroups = (
 };
 
 const generateAutoRunCategoryGroups = (
+  categoriesDB: AutoRunCategoryDB[],
   categories: CategoryGroup[],
   payFreq: PayFrequency
 ) => {
@@ -188,36 +189,50 @@ const generateAutoRunCategoryGroups = (
       const currCategory = currGroup.categories[j];
       returnPostingMonths = [];
 
-      for (let k = 0; k < currCategory.postingMonths.length; k++) {
-        const currPM = currCategory.postingMonths[k];
+      if (currCategory.adjustedAmount > 0) {
+        for (let k = 0; k < currCategory.postingMonths.length; k++) {
+          const currPM = currCategory.postingMonths[k];
+          const dbCats = categoriesDB.filter(
+            (c) =>
+              c.CategoryGUID?.toLowerCase() ==
+                currCategory.guid.toLowerCase() &&
+              c.PostingMonth &&
+              new Date(currPM.month).toISOString() ==
+                new Date(c.PostingMonth).toISOString()
+          );
 
-        returnPostingMonths.push({
-          postingMonth: currPM.month,
-          included: true,
-          amountToPost: currPM.amount,
+          const isIncluded = dbCats.at(0) ? dbCats[0].IsIncluded : true;
+
+          returnPostingMonths.push({
+            postingMonth: currPM.month,
+            included: isIncluded,
+            amountToPost: currPM.amount,
+          });
+        }
+
+        returnCategories.push({
+          categoryGUID: currCategory.guid,
+          categoryID: currCategory.categoryID,
+          categoryName: currCategory.name,
+          categoryAmount: currCategory.amount,
+          categoryExtraAmount: currCategory.extraAmount,
+          categoryAdjustedAmount: currCategory.adjustedAmount,
+          categoryAdjustedAmountPerPaycheck: getAmountByPayFrequency(
+            currCategory.adjustedAmountPlusExtra,
+            payFreq
+          ),
+          postingMonths: returnPostingMonths,
         });
       }
-
-      returnCategories.push({
-        categoryGUID: currCategory.guid,
-        categoryID: currCategory.categoryID,
-        categoryName: currCategory.name,
-        categoryAmount: currCategory.amount,
-        categoryExtraAmount: currCategory.extraAmount,
-        categoryAdjustedAmount: currCategory.adjustedAmount,
-        categoryAdjustedAmountPerPaycheck: getAmountByPayFrequency(
-          currCategory.adjustedAmountPlusExtra,
-          payFreq
-        ),
-        postingMonths: returnPostingMonths,
-      });
     }
 
-    returnGroups.push({
-      groupID: currGroup.groupID,
-      groupName: currGroup.groupName,
-      categories: returnCategories,
-    });
+    if (returnCategories.length > 0) {
+      returnGroups.push({
+        groupID: currGroup.groupID,
+        groupName: currGroup.groupName,
+        categories: returnCategories,
+      });
+    }
   }
 
   return returnGroups;
@@ -233,16 +248,17 @@ const getAutoRunDetails = (
 ) => {
   const budgetCategories = getBudgetCategories(budget);
   const autoRuns: AutoRun[] = autoRunData.map((ar) => {
+    const { RunID, RunTime, IsLocked } = ar;
+
     const autoRunCategoriesDB = autoRunCategoryData.filter(
-      (arc) => arc.RunID.toLowerCase() == ar.RunID.toLowerCase()
+      (arc) => arc.RunID.toLowerCase() == RunID.toLowerCase()
     );
 
-    const groupIDs = getDistinctValues(autoRunCategoriesDB, "CategoryGroupID");
-    log("groupIDs", groupIDs);
     let autoRunCategoryGroups: AutoRunCategoryGroup[] = [];
     // if (pastRuns)
-    if (!pastRuns && groupIDs[0] == null) {
+    if (!pastRuns && !IsLocked) {
       autoRunCategoryGroups = generateAutoRunCategoryGroups(
+        autoRunCategoriesDB,
         categories,
         payFreq
       );
@@ -257,9 +273,9 @@ const getAutoRunDetails = (
     }
 
     return {
-      runID: ar.RunID,
-      runTime: ar.RunTime,
-      isLocked: ar.IsLocked,
+      runID: RunID,
+      runTime: RunTime,
+      isLocked: IsLocked,
       categoryGroups: autoRunCategoryGroups,
     };
   });

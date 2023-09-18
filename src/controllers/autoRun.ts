@@ -123,9 +123,11 @@ export const lockAutoRuns = async function (
     return;
   }
 
-  if (queryRes.resultCount == 1) {
+  if (!Array.isArray(queryRes.resultData)) {
     queryRes.resultData = [queryRes.resultData];
   }
+
+  log("querydata", queryRes.resultData);
 
   // 2. Then, loop through each Run and...
   let lockedResults: LockedResult[] = [];
@@ -136,6 +138,8 @@ export const lockAutoRuns = async function (
     // - Get the current budget/autoRun details for this UserID/BudgetID
     const budget = await getBudget(req, next, UserID, BudgetID);
     if (!budget) return;
+
+    // log("budget", budget);
 
     const categoryData = await getCategoryData(
       req,
@@ -148,6 +152,8 @@ export const lockAutoRuns = async function (
     );
     if (!categoryData) return;
 
+    // log("categories", categoryData.categoryGroups);
+
     const autoRunData = await getAutoRunData(
       req,
       next,
@@ -159,7 +165,10 @@ export const lockAutoRuns = async function (
     );
     if (!autoRunData) return;
 
+    // log("autoRunData", autoRunData.autoRuns);
+
     const autoRunCategories = getAutoRunCategories(autoRunData.autoRuns);
+    log("autoRunData2", autoRunCategories);
     for (let j = 0; j < autoRunCategories.length; j++) {
       const currCat = autoRunCategories[j];
 
@@ -183,6 +192,8 @@ export const lockAutoRuns = async function (
     }
   }
 
+  log(lockedResults);
+
   // 3. Run the stored procedure for locking the results using our JSON
   queryRes = await execute(req, "spEV_LockAutoRuns", [
     {
@@ -193,6 +204,7 @@ export const lockAutoRuns = async function (
   if (sqlErr(next, queryRes)) return;
 
   res.status(200).json({ status: "EverCent categories locked successfully!" });
+  // res.status(200).json({ status: "test!" });
 };
 
 export const runAutomation = async function (
@@ -244,6 +256,8 @@ export const runAutomation = async function (
       );
       for (let k = 0; k < monthData.length; k++) {
         const category = monthData[k];
+        if (!category.IsIncluded) continue;
+
         const currMonth = new Date(category.PostingMonth);
 
         const bm = getBudgetMonth(budget.months, currMonth);
