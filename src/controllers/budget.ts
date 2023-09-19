@@ -33,7 +33,8 @@ export const connectToYNAB = async function (
 
   const url = GetURL_YNABAuthorizationPage(UserID as string);
   // openURL(url);
-  res.redirect(url);
+  // res.redirect(url);
+  res.status(200).json({ url });
 };
 
 export const getBudgetData = async function (
