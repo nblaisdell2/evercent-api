@@ -29,7 +29,7 @@ export const connectToYNAB = async function (
   res: Response,
   next: NextFunction
 ) {
-  const { UserID } = req.query;
+  const { UserID } = req.body;
 
   const url = GetURL_YNABAuthorizationPage(UserID as string);
   // openURL(url);
