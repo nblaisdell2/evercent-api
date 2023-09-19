@@ -3,7 +3,7 @@ import { execute, sqlErr } from "../utils/sql";
 import { log } from "../utils/log";
 
 import { UserData, getUserData } from "../model/user";
-import { Budget, getBudget } from "../model/budget";
+import { Budget, FAKE_BUDGET_ID, getBudget } from "../model/budget";
 import {
   CategoryGroup,
   ExcludedCategory,
@@ -12,8 +12,8 @@ import {
 import { AutoRun, getAutoRunData } from "../model/autoRun";
 
 type EvercentData = {
-  userData: UserData;
-  budget: Budget;
+  userData: UserData | null;
+  budget: Budget | null;
   categoryGroups: CategoryGroup[];
   excludedCategories: ExcludedCategory[];
   autoRuns: AutoRun[];
@@ -26,12 +26,35 @@ export const getAllUserData = async function (
   next: NextFunction
 ) {
   const { UserEmail } = req.query;
+  let allData: EvercentData = {
+    userData: null,
+    budget: null,
+    categoryGroups: [],
+    excludedCategories: [],
+    autoRuns: [],
+    pastRuns: [],
+  };
 
   const userData = await getUserData(req, next, UserEmail as string);
-  if (!userData) return;
+  if (!userData) {
+    res.status(200).json(allData);
+    return;
+  }
+
+  allData.userData = userData;
+
+  if (userData.budgetID == FAKE_BUDGET_ID) {
+    res.status(200).json(allData);
+    return;
+  }
 
   const budget = await getBudget(req, next, userData.userID, userData.budgetID);
-  if (!budget) return;
+  if (!budget) {
+    res.status(200).json(allData);
+    return;
+  }
+
+  allData.budget = budget;
 
   const categoryData = await getCategoryData(
     req,
@@ -42,7 +65,13 @@ export const getAllUserData = async function (
     userData.payFrequency,
     userData.nextPaydate
   );
-  if (!categoryData) return;
+  if (!categoryData) {
+    res.status(200).json(allData);
+    return;
+  }
+
+  allData.categoryGroups = categoryData.categoryGroups;
+  allData.excludedCategories = categoryData.excludedCategories;
 
   const autoRunData = await getAutoRunData(
     req,
@@ -53,14 +82,15 @@ export const getAllUserData = async function (
     budget,
     categoryData.categoryGroups
   );
-  if (!autoRunData) return;
+  if (!autoRunData) {
+    res.status(200).json(allData);
+    return;
+  }
 
-  res.status(200).json({
-    userData,
-    budget,
-    ...categoryData,
-    ...autoRunData,
-  } as EvercentData);
+  allData.autoRuns = autoRunData.autoRuns;
+  allData.pastRuns = autoRunData.pastRuns;
+
+  res.status(200).json(allData);
 };
 
 export const getUserDetails = async function (
