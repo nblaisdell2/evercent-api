@@ -162,5 +162,5 @@ export const authorizeBudget = async function (
   ]);
   if (sqlErr(next, sqlRes)) return;
 
-  res.redirect("/");
+  res.redirect("http://localhost:3000");
 };
