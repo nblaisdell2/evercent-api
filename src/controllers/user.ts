@@ -10,6 +10,7 @@ import {
   getCategoryData,
 } from "../model/category";
 import { AutoRun, getAutoRunData } from "../model/autoRun";
+import { throwExpressError } from "../app";
 
 type EvercentData = {
   userData: UserData | null;

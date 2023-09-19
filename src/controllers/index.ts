@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { execute } from "../utils/sql";
+import { log } from "../utils/log";
 
 export const getAPIStatus = function (
   req: Request,
@@ -14,6 +15,7 @@ export const logInfo = async function (
   res: Response,
   next: NextFunction
 ) {
+  log("req.body", req.body);
   const { level, message, timestamp } = req.body;
 
   const messageItems = message.split("||").map((item: string) => item.trim());
@@ -28,6 +30,7 @@ export const logInfo = async function (
     { name: "StatusCode", value: statusCode },
     { name: "TimeElapsedMs", value: timeElapsed },
     { name: "LogMessage", value: messageItems[0] },
+    { name: "LogMessageAdditional", value: messageItems[3] },
     { name: "LogTimestamp", value: timestamp },
   ]);
 
