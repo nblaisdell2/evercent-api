@@ -7,7 +7,7 @@ const myConfig = config();
 if (myConfig?.parsed?.PORT) {
   process.env["PORT"] = myConfig.parsed.PORT;
 }
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 app.set("port", port);
 
 // Create HTTP server.

@@ -15,7 +15,7 @@ router.route("/").get(getBudgetData);
 router.route("/getBudgetsList").get(getBudgetsList);
 router.route("/switchBudget").post(switchBudget);
 router.route("/updateCategoryAmount").post(updateCategoryAmount);
-router.route("/connect").get(connectToYNAB);
+router.route("/connect").post(connectToYNAB);
 router.route("/authorizeBudget").get(authorizeBudget);
 
 export default router;
