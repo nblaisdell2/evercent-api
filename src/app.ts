@@ -1,6 +1,7 @@
 import express, { json, urlencoded } from "express";
 import type { Express, Request, Response, NextFunction } from "express";
 import createError, { HttpError } from "http-errors";
+import cors from "cors";
 
 import { createSharedConnectionPool } from "./utils/sql";
 import { logError, routeLogger } from "./utils/log";
@@ -18,6 +19,11 @@ const app: Express = express();
 // Makes sure our API can only accept URL-encoded strings, or JSON data
 app.use(json());
 app.use(urlencoded({ extended: false }));
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "https://evercent.net"],
+  })
+);
 
 // Logging mechanisms
 app.use(routeLogger());
