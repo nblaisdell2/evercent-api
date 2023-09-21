@@ -37,59 +37,49 @@ export const getAllUserData = async function (
   };
 
   const userData = await getUserData(req, next, UserEmail as string);
-  if (!userData) {
-    res.status(200).json(allData);
-    return;
-  }
+  if (!userData) return;
 
   allData.userData = userData;
 
-  if (userData.budgetID == FAKE_BUDGET_ID) {
-    res.status(200).json(allData);
-    return;
+  if (userData.budgetID != FAKE_BUDGET_ID) {
+    const budget = await getBudget(
+      req,
+      next,
+      userData.userID,
+      userData.budgetID
+    );
+    if (!budget) return;
+
+    allData.budget = budget;
+
+    const categoryData = await getCategoryData(
+      req,
+      next,
+      budget,
+      userData.userID,
+      userData.budgetID,
+      userData.payFrequency,
+      userData.nextPaydate
+    );
+    if (!categoryData) return;
+
+    allData.categoryGroups = categoryData.categoryGroups;
+    allData.excludedCategories = categoryData.excludedCategories;
+
+    const autoRunData = await getAutoRunData(
+      req,
+      next,
+      userData.userID,
+      userData.budgetID,
+      userData.payFrequency,
+      budget,
+      categoryData.categoryGroups
+    );
+    if (!autoRunData) return;
+
+    allData.autoRuns = autoRunData.autoRuns;
+    allData.pastRuns = autoRunData.pastRuns;
   }
-
-  const budget = await getBudget(req, next, userData.userID, userData.budgetID);
-  if (!budget) {
-    res.status(200).json(allData);
-    return;
-  }
-
-  allData.budget = budget;
-
-  const categoryData = await getCategoryData(
-    req,
-    next,
-    budget,
-    userData.userID,
-    userData.budgetID,
-    userData.payFrequency,
-    userData.nextPaydate
-  );
-  if (!categoryData) {
-    res.status(200).json(allData);
-    return;
-  }
-
-  allData.categoryGroups = categoryData.categoryGroups;
-  allData.excludedCategories = categoryData.excludedCategories;
-
-  const autoRunData = await getAutoRunData(
-    req,
-    next,
-    userData.userID,
-    userData.budgetID,
-    userData.payFrequency,
-    budget,
-    categoryData.categoryGroups
-  );
-  if (!autoRunData) {
-    res.status(200).json(allData);
-    return;
-  }
-
-  allData.autoRuns = autoRunData.autoRuns;
-  allData.pastRuns = autoRunData.pastRuns;
 
   res.status(200).json(allData);
 };
