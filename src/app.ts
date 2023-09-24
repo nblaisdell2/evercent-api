@@ -48,6 +48,10 @@ app.use(async function (
   res: Response,
   next: NextFunction
 ) {
+  if (data?.status && data?.status == 500) {
+    return throwExpressError(next, data.message);
+  }
+
   const endpoint = req.method + " " + req.url;
   await logInfo(req, "Success", res.statusCode, endpoint, null);
 

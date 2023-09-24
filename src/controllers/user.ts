@@ -48,7 +48,10 @@ export const getAllUserData = async function (
       userData.userID,
       userData.budgetID
     );
-    if (!budget) return;
+    if (!budget) {
+      log("Logging here!");
+      return;
+    }
 
     allData.budget = budget;
 
