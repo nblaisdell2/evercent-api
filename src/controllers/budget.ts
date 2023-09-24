@@ -34,7 +34,7 @@ export const connectToYNAB = async function (
   const url = GetURL_YNABAuthorizationPage(UserID as string);
   // openURL(url);
   // res.redirect(url);
-  res.status(200).json({ url });
+  next({ url });
 };
 
 export const getBudgetData = async function (
@@ -52,7 +52,7 @@ export const getBudgetData = async function (
     const budgetData = await getBudget(req, next, UserID, BudgetID);
     if (!budgetData) return;
 
-    res.status(200).json(budgetData);
+    next(budgetData);
   }
 };
 
@@ -72,7 +72,7 @@ export const getBudgetsList = async function (
   );
   if (!budgets) return;
 
-  res.status(200).json(budgets);
+  next(budgets);
 };
 
 export const switchBudget = async function (
@@ -94,7 +94,7 @@ export const switchBudget = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  res.status(200).json({ status: "Budgets switched successfully!" });
+  next({ status: "Budgets switched successfully!" });
 };
 
 export const updateCategoryAmount = async function (
@@ -115,7 +115,7 @@ export const updateCategoryAmount = async function (
   );
   if (!result) return;
 
-  res.status(200).json({ result });
+  next({ result });
 };
 
 export const authorizeBudget = async function (

@@ -67,7 +67,7 @@ export const getAutoRuns = async function (
   );
   if (!autoRunData) return;
 
-  res.status(200).json(autoRunData);
+  next(autoRunData);
 };
 
 export const saveAutoRunDetails = async function (
@@ -88,7 +88,7 @@ export const saveAutoRunDetails = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  res.status(200).json(queryRes.resultData);
+  next(queryRes.resultData);
 };
 
 export const cancelAutoRuns = async function (
@@ -104,7 +104,7 @@ export const cancelAutoRuns = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  res.status(200).json(queryRes.resultData);
+  next(queryRes.resultData);
 };
 
 export const lockAutoRuns = async function (
@@ -119,7 +119,7 @@ export const lockAutoRuns = async function (
   // Check to see if we have any runs to lock.
   // If not, exit early here.
   if (!queryRes.resultData) {
-    res.status(200).json({ status: "No AutoRuns to lock. Exiting..." });
+    next({ status: "No AutoRuns to lock. Exiting..." });
     return;
   }
 
@@ -203,8 +203,8 @@ export const lockAutoRuns = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  res.status(200).json({ status: "EverCent categories locked successfully!" });
-  // res.status(200).json({ status: "test!" });
+  next({ status: "EverCent categories locked successfully!" });
+  // next({ status: "test!" });
 };
 
 export const runAutomation = async function (
@@ -221,7 +221,7 @@ export const runAutomation = async function (
   // If not, exit early here.
   if (!queryRes.resultData) {
     log("No Locked AutoRuns found. Exiting automation...");
-    res.status(200).json({ status: "No AutoRuns to lock. Exiting..." });
+    next({ status: "No AutoRuns to lock. Exiting..." });
     return;
   }
 
@@ -366,7 +366,5 @@ export const runAutomation = async function (
   }
 
   log("EVERCENT AUTOMATION - COMPLETE!");
-  res
-    .status(200)
-    .json({ status: "EverCent Automation completed successfully!" });
+  next({ status: "EverCent Automation completed successfully!" });
 };

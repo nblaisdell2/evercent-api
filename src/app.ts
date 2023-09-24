@@ -4,7 +4,7 @@ import createError, { HttpError } from "http-errors";
 import cors from "cors";
 
 import { createSharedConnectionPool } from "./utils/sql";
-import { logError, routeLogger } from "./utils/log";
+import { log, logError, logInfo, routeLogger } from "./utils/log";
 
 import indexRouter from "./routes/indexRouter";
 import budgetRouter from "./routes/budgetRouter";
@@ -41,25 +41,43 @@ createSharedConnectionPool().then((pool) => {
   app.locals.db = pool;
 });
 
+// success handler
+app.use(async function (
+  data: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const endpoint = req.method + " " + req.url;
+  await logInfo(req, "Success", res.statusCode, endpoint, null);
+
+  // render the error page
+  return res.status(200).json(data);
+});
+
 // catch 404 and forward to error handler
 app.use(function (req: Request, res: Response, next: NextFunction) {
   next(createError(404));
 });
 
 // error handler
-app.use(function (
+app.use(async function (
   err: HttpError,
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   // set locals, only providing error in development
-  res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
   logError(err.message);
 
+  const endpoint = req.method + " " + req.url;
+  await logInfo(req, "Error", err.status || 500, endpoint, err.message);
+
   // render the error page
-  res.status(err.status || 500).json({ error: "Error occurred with request." });
+  return res
+    .status(err.status || 500)
+    .json({ error: "Error occurred with request." });
 });
 
 export const throwExpressError = (

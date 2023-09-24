@@ -81,7 +81,7 @@ export const getAllUserData = async function (
     allData.pastRuns = autoRunData.pastRuns;
   }
 
-  res.status(200).json(allData);
+  next(allData);
 };
 
 export const getUserDetails = async function (
@@ -94,7 +94,7 @@ export const getUserDetails = async function (
   const userData = await getUserData(req, next, UserEmail as string);
   if (!userData) return;
 
-  res.status(200).json(userData);
+  next(userData);
 };
 
 export const updateUserDetails = async function (
@@ -114,7 +114,7 @@ export const updateUserDetails = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  res.status(200).json(queryRes.resultData);
+  next(queryRes.resultData);
 };
 
 export const getCategoryDetails = async function (
@@ -141,7 +141,7 @@ export const getCategoryDetails = async function (
   );
   if (!categoryData) return;
 
-  res.status(200).json(categoryData);
+  next(categoryData);
 };
 
 export const updateCategoryDetails = async function (
@@ -158,7 +158,7 @@ export const updateCategoryDetails = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  res.status(200).json(queryRes.resultData);
+  next(queryRes.resultData);
 };
 
 export const updateMonthsAheadTarget = async function (
@@ -175,5 +175,5 @@ export const updateMonthsAheadTarget = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  res.status(200).json(queryRes.resultData);
+  next(queryRes.resultData);
 };

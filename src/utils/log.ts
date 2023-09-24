@@ -1,16 +1,11 @@
 import winston from "winston";
 import expressWinston from "express-winston";
 import type { Request, Response } from "express";
+import { execute } from "./sql";
 
 export const routeLogger = () => {
   return expressWinston.logger({
-    transports: [
-      new winston.transports.Console(),
-      new winston.transports.Http({
-        host: "fg20cv9eg4.execute-api.us-east-1.amazonaws.com/dev",
-        path: "/log",
-      }),
-    ],
+    transports: [new winston.transports.Console()],
     format: winston.format.combine(
       winston.format.timestamp(),
       winston.format.printf((info: winston.Logform.TransformableInfo) => {
@@ -25,10 +20,26 @@ export const routeLogger = () => {
     },
     // expressFormat: true, // Use the default Express/morgan request formatting. Enabling this will override any msg if true. Will only output colors with colorize set to true
     colorize: false, // Color the text and status code, using the Express/morgan color palette (text: gray, status: default green, 3XX cyan, 4XX yellow, 5XX red).
-    ignoreRoute: (req: Request, res: Response) => {
-      return req.path == "/log";
-    },
+    // ignoreRoute: (req: Request, res: Response) => {
+    //   return req.path == "/log";
+    // },
   });
+};
+
+export const logInfo = async function (
+  req: Request,
+  level: "Success" | "Error" | "Info",
+  statusCode: string | number,
+  logEndpoint: string,
+  logMessage: string | null
+) {
+  await execute(req, "spEV_AddLog", [
+    { name: "LogLevel", value: level },
+    { name: "StatusCode", value: statusCode },
+    { name: "LogMessage", value: logEndpoint },
+    { name: "LogMessageAdditional", value: logMessage },
+    { name: "LogTimestamp", value: new Date().toISOString() },
+  ]);
 };
 
 const getDateString = () => {
