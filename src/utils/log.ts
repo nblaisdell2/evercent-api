@@ -7,8 +7,8 @@ export const routeLogger = () => {
     transports: [
       new winston.transports.Console(),
       new winston.transports.Http({
-        host: "localhost",
-        port: 3000,
+        host: "fg20cv9eg4.execute-api.us-east-1.amazonaws.com/dev",
+        port: 443,
         path: "/log",
       }),
     ],
