@@ -55,6 +55,7 @@ export type Category = {
   guid: string;
   categoryGroupID: string;
   categoryID: string;
+  groupName: string;
   name: string;
   amount: number;
   extraAmount: number;
@@ -378,6 +379,7 @@ const createCategory = (
     guid: dbCat.CategoryGUID,
     categoryGroupID: dbCat.CategoryGroupID,
     categoryID: dbCat.CategoryID,
+    groupName: budgetCategory.categoryGroupName,
     name: budgetCategory.name,
     amount: dbCat.CategoryAmount,
     extraAmount: dbCat.ExtraAmount,
