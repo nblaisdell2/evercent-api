@@ -475,7 +475,7 @@ export const getCategoryData = async (
   nextPaydate: string
 ) => {
   const budgetCategories = getBudgetCategories(budget);
-  // log(JSON.stringify({ details: budgetCategories }));
+  log(JSON.stringify({ details: budgetCategories }));
 
   // ========================
   // 1. Refresh and return categories from database

@@ -152,6 +152,11 @@ async function getSQLServerResponse(
       return "Query Timed Out!";
     }
 
+    // If there are multiple errors, just show me the first one
+    if (error?.precedingErrors && error.precedingErrors.length > 0) {
+      error = error.precedingErrors[0];
+    }
+
     const errMsg = error?.originalError.info.message;
     return errMsg;
   }
