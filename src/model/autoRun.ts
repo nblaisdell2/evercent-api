@@ -90,6 +90,16 @@ const createAutoRunCategoryGroups = (
       const categoriesForIDDB = categoriesForGroupDB.filter(
         (cat) => cat.CategoryID.toLowerCase() == categoryID
       );
+
+      const budgetCategory = find(
+        budgetCategories,
+        (bc) =>
+          bc.categoryGroupID.toLowerCase() == groupID &&
+          bc.categoryID.toLowerCase() == categoryID
+      );
+      groupName = budgetCategory.categoryGroupName;
+      categoryName = budgetCategory.name;
+
       if (getPastRuns) {
         for (let k = 0; k < categoriesForIDDB.length; k++) {
           const categoryDB = categoriesForIDDB[k];
