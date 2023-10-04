@@ -75,7 +75,6 @@ export const getAllUserData = async function (
       userData.userID,
       userData.budgetID,
       userData.payFrequency,
-      budget,
       categoryData.categoryGroups
     );
     if (!autoRunData) return;

@@ -62,7 +62,6 @@ export const getAutoRuns = async function (
     userData.userID,
     userData.budgetID,
     userData.payFrequency,
-    budget,
     categoryData.categoryGroups
   );
   if (!autoRunData) return;
@@ -160,7 +159,6 @@ export const lockAutoRuns = async function (
       UserID,
       BudgetID,
       PayFrequency,
-      budget,
       categoryData.categoryGroups
     );
     if (!autoRunData) return;

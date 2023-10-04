@@ -64,54 +64,54 @@ type AutoRunCategoryDB = {
 
 const createAutoRunCategoryGroups = (
   categoriesDB: AutoRunCategoryDB[],
-  budgetCategories: BudgetMonthCategory[],
   categories: CategoryGroup[],
   payFreq: PayFrequency,
   getPastRuns: boolean
 ): AutoRunCategoryGroup[] => {
-  const returnGroups: AutoRunCategoryGroup[] = [];
+  let returnGroups: AutoRunCategoryGroup[] = [];
+  let returnCategories: AutoRunCategory[] = [];
+  let returnPostingMonths: AutoRunCategoryMonth[] = [];
 
+  returnGroups = [];
   const groupIDs = getDistinctValues(categoriesDB, "CategoryGroupID");
-  for (let i = 0; i < groupIDs.length; i++) {
-    const groupID = groupIDs[i].toLowerCase();
-    let groupName = "";
+  for (let i = 0; i < categories.length; i++) {
+    const currGroup = categories[i];
+    const groupID = currGroup.groupID.toLowerCase();
+    if (!groupIDs.map((g) => g.toLowerCase()).includes(groupID)) continue;
+
+    let groupName = currGroup.groupName;
 
     const categoriesForGroupDB = categoriesDB.filter(
       (cat) => cat.CategoryGroupID.toLowerCase() == groupID
     );
-
-    const returnCategories: AutoRunCategory[] = [];
     const categoryIDs = getDistinctValues(categoriesForGroupDB, "CategoryID");
-    for (let j = 0; j < categoryIDs.length; j++) {
-      const categoryID = categoryIDs[j].toLowerCase();
-      let categoryName = "";
 
-      const returnPostingMonths: AutoRunCategoryMonth[] = [];
+    returnCategories = [];
+    for (let j = 0; j < currGroup.categories.length; j++) {
+      const currCategory = currGroup.categories[j];
+      const categoryID = currCategory.categoryID.toLowerCase();
+      if (!categoryIDs.map((c) => c.toLowerCase()).includes(categoryID))
+        continue;
+      returnPostingMonths = [];
+
+      let categoryName = currCategory.name;
+
       const categoriesForIDDB = categoriesForGroupDB.filter(
         (cat) => cat.CategoryID.toLowerCase() == categoryID
       );
 
-      const budgetCategory = find(
-        budgetCategories,
-        (bc) =>
-          bc.categoryGroupID.toLowerCase() == groupID &&
-          bc.categoryID.toLowerCase() == categoryID
-      );
-      groupName = budgetCategory.categoryGroupName;
-      categoryName = budgetCategory.name;
+      // const budgetCategory = find(
+      //   budgetCategories,
+      //   (bc) =>
+      //     bc.categoryGroupID.toLowerCase() == groupID &&
+      //     bc.categoryID.toLowerCase() == categoryID
+      // );
+      // groupName = budgetCategory.categoryGroupName;
+      // categoryName = budgetCategory.name;
 
       if (getPastRuns) {
         for (let k = 0; k < categoriesForIDDB.length; k++) {
           const categoryDB = categoriesForIDDB[k];
-
-          const budgetCategory = find(
-            budgetCategories,
-            (bc) =>
-              bc.categoryGroupID.toLowerCase() == groupID &&
-              bc.categoryID.toLowerCase() == categoryID
-          );
-          groupName = budgetCategory.categoryGroupName;
-          categoryName = budgetCategory.name;
 
           returnPostingMonths.push({
             postingMonth: categoryDB.PostingMonth,
@@ -169,6 +169,7 @@ const createAutoRunCategoryGroups = (
       }
     }
 
+    log("pushing group", groupName);
     returnGroups.push({
       groupID: groupID,
       groupName: groupName,
@@ -251,12 +252,10 @@ const generateAutoRunCategoryGroups = (
 const getAutoRunDetails = (
   autoRunData: AutoRunDB[],
   autoRunCategoryData: AutoRunCategoryDB[],
-  budget: Budget,
   categories: CategoryGroup[],
   payFreq: PayFrequency,
   pastRuns: boolean
 ) => {
-  const budgetCategories = getBudgetCategories(budget);
   const autoRuns: AutoRun[] = autoRunData.map((ar) => {
     const { RunID, RunTime, IsLocked } = ar;
 
@@ -265,7 +264,6 @@ const getAutoRunDetails = (
     );
 
     let autoRunCategoryGroups: AutoRunCategoryGroup[] = [];
-    // if (pastRuns)
     if (!pastRuns && !IsLocked) {
       autoRunCategoryGroups = generateAutoRunCategoryGroups(
         autoRunCategoriesDB,
@@ -275,7 +273,6 @@ const getAutoRunDetails = (
     } else {
       autoRunCategoryGroups = createAutoRunCategoryGroups(
         autoRunCategoriesDB,
-        budgetCategories,
         categories,
         payFreq,
         pastRuns
@@ -299,7 +296,6 @@ export const getAutoRunData = async (
   userID: string,
   budgetID: string,
   payFreq: PayFrequency,
-  budget: Budget,
   categories: CategoryGroup[]
 ) => {
   const queryRes = await query(req, "spEV_GetAutoRunData", [
@@ -312,7 +308,6 @@ export const getAutoRunData = async (
   const autoRuns = getAutoRunDetails(
     queryRes.resultData[0],
     queryRes.resultData[1],
-    budget,
     categories,
     payFreq,
     false
@@ -322,7 +317,6 @@ export const getAutoRunData = async (
   const pastRuns = getAutoRunDetails(
     queryRes.resultData[2],
     queryRes.resultData[3],
-    budget,
     categories,
     payFreq,
     true
