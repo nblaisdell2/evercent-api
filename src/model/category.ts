@@ -3,6 +3,7 @@ import {
   addMonths,
   differenceInMonths,
   isEqual,
+  parse,
   parseISO,
   startOfMonth,
 } from "date-fns";
@@ -258,8 +259,12 @@ const getPostingMonths = (
         ? desiredPostAmt
         : Math.min(totalAmt, desiredPostAmt);
 
+      // const newlyParsed = parse(bm.month, "yyyy-MM-dd", new Date());
+      // log("newly parsed", newlyParsed);
+      // log("newly parsed iso", newlyParsed.toISOString());
+
       postingMonths.push({
-        month: parseISO(bm.month).toISOString(),
+        month: parse(bm.month, "yyyy-MM-dd", new Date()).toISOString(), //parseISO(bm.month).toISOString(),
         amount: postAmt,
         percent: 0,
       });
