@@ -74,10 +74,15 @@ const createAutoRunCategoryGroups = (
 
   returnGroups = [];
   const groupIDs = getDistinctValues(categoriesDB, "CategoryGroupID");
+  log("groupIDs", groupIDs);
   for (let i = 0; i < categories.length; i++) {
     const currGroup = categories[i];
     const groupID = currGroup.groupID.toLowerCase();
-    if (!groupIDs.map((g) => g.toLowerCase()).includes(groupID)) continue;
+    if (
+      groupIDs.length == 0 ||
+      !groupIDs.map((g) => g?.toLowerCase()).includes(groupID)
+    )
+      continue;
 
     let groupName = currGroup.groupName;
 
@@ -263,6 +268,7 @@ const getAutoRunDetails = (
       (arc) => arc.RunID.toLowerCase() == RunID.toLowerCase()
     );
 
+    log("Creating Groups for AutoRun");
     let autoRunCategoryGroups: AutoRunCategoryGroup[] = [];
     if (!pastRuns && !IsLocked) {
       autoRunCategoryGroups = generateAutoRunCategoryGroups(
@@ -287,6 +293,7 @@ const getAutoRunDetails = (
     };
   });
 
+  log("Returning all autoRuns");
   return autoRuns;
 };
 
