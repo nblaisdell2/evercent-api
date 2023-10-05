@@ -9,6 +9,7 @@ import ynab, {
   YNABCategoryGroup,
   YnabReq,
 } from "../utils/ynab";
+import { log } from "../utils/log";
 
 export const FAKE_BUDGET_ID = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEFFFFFF";
 
@@ -109,8 +110,10 @@ const createBudgetMonths = (
 ): BudgetMonth[] => {
   const thisMonth = startOfMonth(new Date());
 
-  const newMonths = months.reduce((prev, curr) => {
+  let tbb = 0;
+  const newMonths = months.reduce((prev, curr, i) => {
     const ynabMonth = parseISO(curr.month as string);
+    if (i == 0) tbb = curr.to_be_budgeted / 1000;
 
     if (ynabMonth > thisMonth || isEqual(ynabMonth, thisMonth)) {
       const groups = createBudgetCategoryGroups(
@@ -123,7 +126,7 @@ const createBudgetMonths = (
         {
           groups,
           month: curr.month,
-          tbb: isEqual(ynabMonth, thisMonth) ? curr.to_be_budgeted / 1000 : 0,
+          tbb: 0,
         },
       ];
     } else {
@@ -136,6 +139,8 @@ const createBudgetMonths = (
   newMonths.sort((a: BudgetMonth, b: BudgetMonth) => {
     return new Date(a.month).getTime() - new Date(b.month).getTime();
   });
+
+  newMonths[0].tbb = tbb;
 
   // Append 25 more months at the end of the list, in case I need them
   // for calculating "posting months" into the future
