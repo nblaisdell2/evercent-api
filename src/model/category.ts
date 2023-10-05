@@ -7,6 +7,7 @@ import {
   parseISO,
   startOfMonth,
 } from "date-fns";
+import zonedTimeToUtc from "date-fns-tz/zonedTimeToUtc";
 import { log } from "../utils/log";
 import { find, sum } from "../utils/util";
 import { query, sqlErr } from "../utils/sql";
@@ -259,12 +260,21 @@ const getPostingMonths = (
         ? desiredPostAmt
         : Math.min(totalAmt, desiredPostAmt);
 
-      // const newlyParsed = parse(bm.month, "yyyy-MM-dd", new Date());
-      // log("newly parsed", newlyParsed);
-      // log("newly parsed iso", newlyParsed.toISOString());
-
+      // const month = zonedTimeToUtc(
+      //   parse(bm.month, "yyyy-MM-dd", new Date()),
+      //   "UTC"
+      // ).toISOString();
+      const month = parseISO(bm.month).toISOString();
+      log("month1", month);
+      log(
+        "month2",
+        zonedTimeToUtc(
+          parse(bm.month, "yyyy-MM-dd", new Date()),
+          "UTC"
+        ).toISOString()
+      );
       postingMonths.push({
-        month: parse(bm.month, "yyyy-MM-dd", new Date()).toISOString(), //parseISO(bm.month).toISOString(),
+        month: month,
         amount: postAmt,
         percent: 0,
       });

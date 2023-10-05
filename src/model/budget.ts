@@ -123,7 +123,7 @@ const createBudgetMonths = (
         {
           groups,
           month: curr.month,
-          tbb: 0,
+          tbb: isEqual(ynabMonth, thisMonth) ? curr.to_be_budgeted : 0,
         },
       ];
     } else {
