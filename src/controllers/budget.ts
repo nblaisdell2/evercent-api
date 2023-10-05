@@ -162,5 +162,5 @@ export const authorizeBudget = async function (
   ]);
   if (sqlErr(next, sqlRes)) return;
 
-  res.redirect(process.env.API_BASE_URL as string);
+  res.redirect(process.env.CLIENT_BASE_URL as string);
 };
