@@ -21,7 +21,11 @@ app.use(json());
 app.use(urlencoded({ extended: false }));
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://evercent.net"],
+    origin: [
+      "http://localhost:3000",
+      "https://evercent.net",
+      "https://api.ynab.com",
+    ],
   })
 );
 
