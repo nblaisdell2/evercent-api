@@ -300,7 +300,11 @@ const updateYNABCategoryAmount = async (
   month: string | undefined,
   newBudgetedAmount: number | undefined
 ): Promise<YNABCategory | null> => {
-  if (!(categoryID && month && newBudgetedAmount)) {
+  if (
+    categoryID == undefined ||
+    month == undefined ||
+    newBudgetedAmount == undefined
+  ) {
     return null;
   }
 
