@@ -255,6 +255,16 @@ const getPostingMonths = (
 
     // if (DEBUG) log("desiredPostAmt", { desiredPostAmt });
 
+    if (
+      // useOverride &&
+      isEqual(parseISO(bm.month), startOfMonth(new Date())) &&
+      !category.regularExpenseDetails?.multipleTransactions &&
+      bc.activity < 0
+    ) {
+      currMonth = addMonths(currMonth, 1);
+      continue;
+    }
+
     if (desiredPostAmt !== -1) {
       const postAmt = useOverride
         ? desiredPostAmt
