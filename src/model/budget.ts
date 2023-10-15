@@ -142,11 +142,11 @@ const createBudgetMonths = (
 
   newMonths[0].tbb = tbb;
 
-  // Append 25 more months at the end of the list, in case I need them
+  // Append 10-years-worth more months at the end of the list, in case I need them
   // for calculating "posting months" into the future
   let lastMonth = newMonths[newMonths.length - 1];
   let currMonth = parseISO(lastMonth.month);
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 120; i++) {
     currMonth = addMonths(currMonth, 1);
     newMonths.push({
       ...lastMonth,

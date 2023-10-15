@@ -331,7 +331,7 @@ const calculateMonthsAhead = (
     months,
     payFreq,
     nextPaydate,
-    25
+    120
   );
 
   // We don't consider the current month when referencing our "months ahead"
@@ -504,7 +504,7 @@ export const getCategoryData = async (
   nextPaydate: string
 ) => {
   const budgetCategories = getBudgetCategories(budget);
-  // log(JSON.stringify({ details: budgetCategories }));
+  log(JSON.stringify({ details: budgetCategories }));
 
   // ========================
   // 1. Refresh and return categories from database
