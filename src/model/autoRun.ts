@@ -28,6 +28,7 @@ export type AutoRunCategory = {
   categoryAdjustedAmount: number;
   categoryAdjustedAmountPerPaycheck: number;
   postingMonths: AutoRunCategoryMonth[];
+  included: boolean;
 };
 
 export type AutoRunCategoryMonth = {
@@ -138,6 +139,7 @@ const createAutoRunCategoryGroups = (
           categoryAdjustedAmountPerPaycheck:
             categoriesForIDDB[0].CategoryAdjAmountPerPaycheck,
           postingMonths: returnPostingMonths,
+          included: categoriesForIDDB[0].IsIncluded,
         });
       } else {
         const evercentGroup = find(
@@ -170,6 +172,10 @@ const createAutoRunCategoryGroups = (
             payFreq
           ),
           postingMonths: returnPostingMonths,
+          included:
+            evercentCategory.regularExpenseDetails == null
+              ? true
+              : evercentCategory.regularExpenseDetails.includeOnChart,
         });
       }
     }
@@ -238,6 +244,10 @@ const generateAutoRunCategoryGroups = (
             payFreq
           ),
           postingMonths: returnPostingMonths,
+          included:
+            currCategory.regularExpenseDetails == null
+              ? true
+              : currCategory.regularExpenseDetails.includeOnChart,
         });
       }
     }
