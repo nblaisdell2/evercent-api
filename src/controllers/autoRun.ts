@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { getDistinctValues, sleep } from "../utils/util";
 import { execute, query, sqlErr } from "../utils/sql";
 import { log } from "../utils/log";
-import { getUserData } from "../model/user";
 import {
   getBudget,
   getBudgetCategory,
@@ -30,46 +29,6 @@ type LockedResult = {
 
 type CapitalizeKeys<T> = {
   [k in keyof T as Capitalize<string & k>]: T[k];
-};
-
-export const getAutoRuns = async function (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const { UserEmail } = req.query;
-
-  const userData = await getUserData(req, next, UserEmail as string);
-  if (!userData) return;
-
-  const budget = await getBudget(req, next, userData.userID, userData.budgetID);
-  if (!budget) return;
-
-  const categoryData = await getCategoryData(
-    req,
-    next,
-    budget,
-    userData.userID,
-    userData.budgetID,
-    userData.payFrequency,
-    userData.nextPaydate
-  );
-  if (!categoryData) return;
-
-  const autoRunData = await getAutoRunData(
-    req,
-    next,
-    userData.userID,
-    userData.budgetID,
-    userData.payFrequency,
-    categoryData.categoryGroups
-  );
-  if (!autoRunData) return;
-
-  next({
-    data: autoRunData,
-    message: "Loaded AutoRun data for user: " + userData.userID,
-  });
 };
 
 export const saveAutoRunDetails = async function (
@@ -220,7 +179,6 @@ export const lockAutoRuns = async function (
     data: { status: "EverCent categories locked successfully!" },
     message: JSON.stringify({ results: lockedResults }),
   });
-  // next({ status: "test!" });
 };
 
 export const runAutomation = async function (

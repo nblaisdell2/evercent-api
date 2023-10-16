@@ -88,19 +88,6 @@ export const getAllUserData = async function (
   });
 };
 
-export const getUserDetails = async function (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const { UserEmail } = req.query;
-
-  const userData = await getUserData(req, next, UserEmail as string);
-  if (!userData) return;
-
-  next(userData);
-};
-
 export const updateUserDetails = async function (
   req: Request,
   res: Response,
@@ -128,33 +115,6 @@ export const updateUserDetails = async function (
       NextPaydate,
     }),
   });
-};
-
-export const getCategoryDetails = async function (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const { UserEmail } = req.query;
-
-  const userData = await getUserData(req, next, UserEmail as string);
-  if (!userData) return;
-
-  const budget = await getBudget(req, next, userData.userID, userData.budgetID);
-  if (!budget) return;
-
-  const categoryData = await getCategoryData(
-    req,
-    next,
-    budget,
-    userData.userID,
-    userData.budgetID,
-    userData.payFrequency,
-    userData.nextPaydate
-  );
-  if (!categoryData) return;
-
-  next(categoryData);
 };
 
 export const updateCategoryDetails = async function (

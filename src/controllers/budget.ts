@@ -34,29 +34,7 @@ export const connectToYNAB = async function (
   const url = GetURL_YNABAuthorizationPage(UserID as string);
   // openURL(url);
   // res.redirect(url);
-  next({ url });
-};
-
-export const getBudgetData = async function (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const { UserID, BudgetID } = req.body;
-
-  if (BudgetID == FAKE_BUDGET_ID) {
-    const url = GetURL_YNABAuthorizationPage(UserID);
-    openURL(url);
-    res.status(200).json({ status: "Not Authorized Yet! Sending to YNAB..." });
-  } else {
-    const budgetData = await getBudget(req, next, UserID, BudgetID);
-    if (!budgetData) return;
-
-    next({
-      data: budgetData,
-      message: "Loaded Budget Details Successfully",
-    });
-  }
+  next({ data: { url }, message: "Connecting to YNAB for user: " + UserID });
 };
 
 export const getBudgetsList = async function (

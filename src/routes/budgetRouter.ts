@@ -1,6 +1,5 @@
 import express, { Router } from "express";
 import {
-  getBudgetData,
   getBudgetsList,
   switchBudget,
   updateCategoryAmount,
@@ -11,7 +10,6 @@ import {
 const router: Router = express.Router();
 
 // Define the routes and methods available for each route
-router.route("/").get(getBudgetData);
 router.route("/getBudgetsList").get(getBudgetsList);
 router.route("/switchBudget").post(switchBudget);
 router.route("/updateCategoryAmount").post(updateCategoryAmount);
