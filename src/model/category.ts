@@ -275,14 +275,6 @@ const getPostingMonths = (
       //   "UTC"
       // ).toISOString();
       const month = parseISO(bm.month).toISOString();
-      log("month1", month);
-      log(
-        "month2",
-        zonedTimeToUtc(
-          parse(bm.month, "yyyy-MM-dd", new Date()),
-          "UTC"
-        ).toISOString()
-      );
       postingMonths.push({
         month: month,
         amount: postAmt,
@@ -504,7 +496,7 @@ export const getCategoryData = async (
   nextPaydate: string
 ) => {
   const budgetCategories = getBudgetCategories(budget);
-  log(JSON.stringify({ details: budgetCategories }));
+  // log(JSON.stringify({ details: budgetCategories }));
 
   // ========================
   // 1. Refresh and return categories from database

@@ -196,7 +196,7 @@ const generateAutoRunCategoryGroups = (
   categories: CategoryGroup[],
   payFreq: PayFrequency
 ) => {
-  log("GENERATING from", categories);
+  // log("GENERATING from", categories);
 
   let returnGroups: AutoRunCategoryGroup[] = [];
   let returnCategories: AutoRunCategory[] = [];

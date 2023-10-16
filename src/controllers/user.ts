@@ -10,7 +10,6 @@ import {
   getCategoryData,
 } from "../model/category";
 import { AutoRun, getAutoRunData } from "../model/autoRun";
-import { throwExpressError } from "../app";
 
 type EvercentData = {
   userData: UserData | null;
@@ -83,7 +82,10 @@ export const getAllUserData = async function (
     allData.pastRuns = autoRunData.pastRuns;
   }
 
-  next(allData);
+  next({
+    data: allData,
+    message: "All Data Loaded for user: " + allData.userData.username,
+  });
 };
 
 export const getUserDetails = async function (
@@ -116,7 +118,16 @@ export const updateUserDetails = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  next(queryRes.resultData);
+  next({
+    data: queryRes.resultData,
+    message: JSON.stringify({
+      UserID,
+      BudgetID,
+      MonthlyIncome,
+      PayFrequency,
+      NextPaydate,
+    }),
+  });
 };
 
 export const getCategoryDetails = async function (
@@ -160,7 +171,10 @@ export const updateCategoryDetails = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  next(queryRes.resultData);
+  next({
+    data: queryRes.resultData,
+    message: "Categories Updated Successfully",
+  });
 };
 
 export const updateMonthsAheadTarget = async function (
@@ -177,5 +191,9 @@ export const updateMonthsAheadTarget = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  next(queryRes.resultData);
+  next({
+    data: queryRes.resultData,
+    message:
+      "Updated Months Ahead Target to '" + NewTarget + "' for user: " + UserID,
+  });
 };

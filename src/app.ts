@@ -47,7 +47,11 @@ createSharedConnectionPool().then((pool) => {
 
 // success handler
 app.use(async function (
-  data: any,
+  data: {
+    data: any;
+    message: string;
+    status?: number;
+  },
   req: Request,
   res: Response,
   next: NextFunction
@@ -57,10 +61,10 @@ app.use(async function (
   }
 
   const endpoint = req.method + " " + req.url;
-  await logInfo(req, "Success", res.statusCode, endpoint, null);
+  await logInfo(req, "Success", res.statusCode, endpoint, data.message);
 
   // render the error page
-  return res.status(200).json(data);
+  return res.status(200).json(data.data);
 });
 
 // catch 404 and forward to error handler

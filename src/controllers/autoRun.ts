@@ -66,7 +66,10 @@ export const getAutoRuns = async function (
   );
   if (!autoRunData) return;
 
-  next(autoRunData);
+  next({
+    data: autoRunData,
+    message: "Loaded AutoRun data for user: " + userData.userID,
+  });
 };
 
 export const saveAutoRunDetails = async function (
@@ -87,7 +90,13 @@ export const saveAutoRunDetails = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  next(queryRes.resultData);
+  next({
+    data: queryRes.resultData,
+    message: JSON.stringify({
+      NewRunTime: RunTime,
+      ToggledCategories: ToggledCategories,
+    }),
+  });
 };
 
 export const cancelAutoRuns = async function (
@@ -103,7 +112,10 @@ export const cancelAutoRuns = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  next(queryRes.resultData);
+  next({
+    data: queryRes.resultData,
+    message: "Canceled upcoming AutoRuns for user: " + UserID,
+  });
 };
 
 export const lockAutoRuns = async function (
@@ -118,7 +130,10 @@ export const lockAutoRuns = async function (
   // Check to see if we have any runs to lock.
   // If not, exit early here.
   if (!queryRes.resultData) {
-    next({ status: "No AutoRuns to lock. Exiting..." });
+    next({
+      data: { status: "No AutoRuns to lock. Exiting..." },
+      message: "No AutoRuns to lock. Exiting...",
+    });
     return;
   }
 
@@ -201,7 +216,10 @@ export const lockAutoRuns = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  next({ status: "EverCent categories locked successfully!" });
+  next({
+    data: { status: "EverCent categories locked successfully!" },
+    message: JSON.stringify({ results: lockedResults }),
+  });
   // next({ status: "test!" });
 };
 
@@ -219,7 +237,11 @@ export const runAutomation = async function (
   // If not, exit early here.
   if (!queryRes.resultData) {
     log("No Locked AutoRuns found. Exiting automation...");
-    next({ status: "No AutoRuns to lock. Exiting..." });
+
+    next({
+      data: { status: "No Locked AutoRuns found. Exiting automation..." },
+      message: "No Locked AutoRuns found. Exiting automation...",
+    });
     return;
   }
 
@@ -364,5 +386,9 @@ export const runAutomation = async function (
   }
 
   log("EVERCENT AUTOMATION - COMPLETE!");
-  next({ status: "EverCent Automation completed successfully!" });
+
+  next({
+    data: { status: "EverCent Automation completed successfully!" },
+    message: "EverCent Automation completed successfully!",
+  });
 };

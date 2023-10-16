@@ -52,7 +52,10 @@ export const getBudgetData = async function (
     const budgetData = await getBudget(req, next, UserID, BudgetID);
     if (!budgetData) return;
 
-    next(budgetData);
+    next({
+      data: budgetData,
+      message: "Loaded Budget Details Successfully",
+    });
   }
 };
 
@@ -72,7 +75,10 @@ export const getBudgetsList = async function (
   );
   if (!budgets) return;
 
-  next(budgets);
+  next({
+    data: budgets,
+    message: "Loaded all Budgets list for user: " + UserID,
+  });
 };
 
 export const switchBudget = async function (
@@ -94,7 +100,10 @@ export const switchBudget = async function (
   ]);
   if (sqlErr(next, queryRes)) return;
 
-  next({ status: "Budgets switched successfully!" });
+  next({
+    data: { status: "Budgets switched successfully!" },
+    message: "Budgets switched successfully!",
+  });
 };
 
 export const updateCategoryAmount = async function (
@@ -115,7 +124,10 @@ export const updateCategoryAmount = async function (
   );
   if (!result) return;
 
-  next({ result });
+  next({
+    data: result,
+    message: result,
+  });
 };
 
 export const authorizeBudget = async function (
