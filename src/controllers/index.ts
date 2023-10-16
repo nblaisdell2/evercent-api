@@ -5,5 +5,5 @@ export const getAPIStatus = function (
   res: Response,
   next: NextFunction
 ) {
-  next({ status: "API is up-and-running!" });
+  next({ data: { status: "API is up-and-running!" } });
 };
