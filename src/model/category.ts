@@ -3,15 +3,21 @@ import {
   addMonths,
   differenceInMonths,
   isEqual,
+  isSameDay,
   parse,
   parseISO,
   startOfMonth,
+  startOfToday,
 } from "date-fns";
 import zonedTimeToUtc from "date-fns-tz/zonedTimeToUtc";
 import { log } from "../utils/log";
 import { find, roundNumber, sum } from "../utils/util";
 import { query, sqlErr } from "../utils/sql";
-import { PayFrequency, getAmountByPayFrequency } from "./user";
+import {
+  PayFrequency,
+  getAmountByPayFrequency,
+  incrementDateByFrequency,
+} from "./user";
 import {
   Budget,
   BudgetMonth,
@@ -213,6 +219,13 @@ const getPostingMonths = (
   let totalDesired = category.adjustedAmount;
 
   let currMonth = parseISO(nextPaydate);
+
+  // When calculating months ON the user's paydate, we'll adjust to
+  // the following paydate, since it won't be incremented until they
+  // log in any day after this paydate.
+  if (isSameDay(currMonth, startOfToday())) {
+    currMonth = incrementDateByFrequency(currMonth, payFreq);
+  }
 
   // if (DEBUG) log("amounts", { totalAmt, totalDesired, currMonth });
 

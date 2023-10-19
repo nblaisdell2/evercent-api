@@ -1,5 +1,6 @@
 import { Request, NextFunction } from "express";
 import { query, sqlErr } from "../utils/sql";
+import { addMonths, addWeeks } from "date-fns";
 
 export type PayFrequency = "Weekly" | "Every 2 Weeks" | "Monthly";
 
@@ -38,6 +39,19 @@ export const getAmountByPayFrequency = (
       return amount;
     default:
       return -1;
+  }
+};
+
+export const incrementDateByFrequency = (dt: Date, payFreq: PayFrequency) => {
+  switch (payFreq) {
+    case "Weekly":
+      return addWeeks(dt, 1);
+    case "Every 2 Weeks":
+      return addWeeks(dt, 2);
+    case "Monthly":
+      return addMonths(dt, 1);
+    default:
+      return dt;
   }
 };
 
