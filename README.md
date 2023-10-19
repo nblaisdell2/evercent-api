@@ -31,8 +31,6 @@ Our API will take measures to ensure that these tokens are always kept updated a
 
 <br/>
 
----
-
 ## Endpoints
 
 **API Base URL:** https://fg20cv9eg4.execute-api.us-east-1.amazonaws.com/dev

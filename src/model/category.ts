@@ -9,7 +9,7 @@ import {
 } from "date-fns";
 import zonedTimeToUtc from "date-fns-tz/zonedTimeToUtc";
 import { log } from "../utils/log";
-import { find, sum } from "../utils/util";
+import { find, roundNumber, sum } from "../utils/util";
 import { query, sqlErr } from "../utils/sql";
 import { PayFrequency, getAmountByPayFrequency } from "./user";
 import {
@@ -269,6 +269,11 @@ const getPostingMonths = (
       const postAmt = useOverride
         ? desiredPostAmt
         : Math.min(totalAmt, desiredPostAmt);
+
+      // When we have a bit left over, due to floating-point numbers,
+      // but not enough for even 1 cent (so less than 0.01), we'll stop
+      // adding months, since we've essentially run out
+      if (roundNumber(postAmt, 2) <= 0) break;
 
       // const month = zonedTimeToUtc(
       //   parse(bm.month, "yyyy-MM-dd", new Date()),
