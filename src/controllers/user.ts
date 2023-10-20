@@ -76,7 +76,7 @@ export const getAllUserData = async function (
       req,
       next,
       userData.userID,
-      userData.budgetID,
+      budget,
       userData.payFrequency,
       categoryData.categoryGroups
     );
@@ -84,29 +84,7 @@ export const getAllUserData = async function (
 
     allData.autoRuns = autoRunData.autoRuns;
     allData.pastRuns = autoRunData.pastRuns;
-
-    // recalculate the posting months for each category, if the autoRuns are set
-    // so that we use the correct "nextPaydate", when the user tries to calculate
-    // their posting months for their next paydate, even when checking on their *current*
-    // paydate.
-    if (allData.autoRuns.at(0) != undefined) {
-      allData.categoryGroups = allData.categoryGroups.map((cg) => {
-        return {
-          ...cg,
-          categories: cg.categories.map((c) => {
-            return {
-              ...c,
-              postingMonths: getPostingMonths(
-                c,
-                allData.budget?.months as BudgetMonth[],
-                allData.userData?.payFrequency as PayFrequency,
-                new Date(allData.autoRuns[0].runTime).toISOString()
-              ),
-            };
-          }),
-        };
-      });
-    }
+    allData.categoryGroups = autoRunData.categoryGroups;
   }
 
   next({

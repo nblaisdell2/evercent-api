@@ -3,8 +3,13 @@ import { log } from "../utils/log";
 import { query, sqlErr } from "../utils/sql";
 import { find, getDistinctValues } from "../utils/util";
 import { PayFrequency, getAmountByPayFrequency } from "./user";
-import { Budget, BudgetMonthCategory, getBudgetCategories } from "./budget";
-import { CategoryGroup } from "./category";
+import {
+  Budget,
+  BudgetMonth,
+  BudgetMonthCategory,
+  getBudgetCategories,
+} from "./budget";
+import { CategoryGroup, getPostingMonths } from "./category";
 
 export type AutoRun = {
   runID: string;
@@ -271,7 +276,7 @@ const getAutoRunDetails = (
   payFreq: PayFrequency,
   pastRuns: boolean
 ) => {
-  const autoRuns: AutoRun[] = autoRunData.map((ar) => {
+  const autoRuns = autoRunData.map((ar) => {
     const { RunID, RunTime, IsLocked } = ar;
 
     const autoRunCategoriesDB = autoRunCategoryData.filter(
@@ -300,7 +305,7 @@ const getAutoRunDetails = (
       runTime: RunTime,
       isLocked: IsLocked,
       categoryGroups: autoRunCategoryGroups,
-    };
+    } as AutoRun;
   });
 
   log("Returning all autoRuns");
@@ -311,15 +316,38 @@ export const getAutoRunData = async (
   req: Request,
   next: NextFunction,
   userID: string,
-  budgetID: string,
+  budget: Budget,
   payFreq: PayFrequency,
   categories: CategoryGroup[]
 ) => {
   const queryRes = await query(req, "spEV_GetAutoRunData", [
     { name: "UserID", value: userID },
-    { name: "BudgetID", value: budgetID },
+    { name: "BudgetID", value: budget.id },
   ]);
   if (sqlErr(next, queryRes)) return null;
+
+  // recalculate the posting months for each category, if the autoRuns are set
+  // so that we use the correct "nextPaydate", when the user tries to calculate
+  // their posting months for their next paydate, even when checking on their *current*
+  // paydate.
+  if (queryRes.resultData[0].at(0) != undefined) {
+    categories = categories.map((cg) => {
+      return {
+        ...cg,
+        categories: cg.categories.map((c) => {
+          return {
+            ...c,
+            postingMonths: getPostingMonths(
+              c,
+              budget.months,
+              payFreq,
+              new Date(queryRes.resultData[0][0].RunTime).toISOString()
+            ),
+          };
+        }),
+      };
+    });
+  }
 
   log("GETTING AUTO RUN DETAILS - AutoRuns");
   const autoRuns = getAutoRunDetails(
@@ -339,7 +367,7 @@ export const getAutoRunData = async (
     true
   );
 
-  return { autoRuns, pastRuns };
+  return { autoRuns, pastRuns, categoryGroups: categories };
 };
 
 export const getAutoRunCategories = (
