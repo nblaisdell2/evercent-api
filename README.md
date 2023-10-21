@@ -6,8 +6,8 @@ In its current state, this API is meant to be used internally for EverCent, and 
 
 > To learn more about Evercent:
 >
-> - Github Repo - https://github.com/nblaisdell2/evercent-app
-> - Evercent Documentation - https://nblaisdell.atlassian.net/wiki/spaces/E/overview
+> - <i>GitHub</i> - https://github.com/nblaisdell2/evercent-app
+> - <i>Confluence</i> - [Evercent Documentation](https://nblaisdell.atlassian.net/wiki/spaces/E/overview)
 
 <br/>
 
@@ -26,6 +26,7 @@ npm install
 <br/>
 
 2. Next, create a `.env` file with the following environment variables:
+   - These variables can also be found in the `.env.example` file included in this repo
    - The database variables should correspond to an existing SQL Server database, which is what this API is using as its database
    - The YNAB API variables can be gathered when creating a new YNAB API application
      - <i>For more details:</i> https://api.ynab.com/
@@ -59,6 +60,18 @@ npm run dev
 <br/>
 
 At this point, you can use Postman, or any other HTTP request library, to interact with this API!
+
+<br/>
+
+#### Deployment
+
+This repo also includes scripts and a GitHub Action workflow to automatically provision and upload our code into an API within AWS, as part of the [template](https://github.com/nblaisdell2/express-ts-starter) used to create this repository. This means an AWS account will be required, and a few environment variables (in the form of GitHub repo secrets) need to be created in the repo in order for the scripts to run correctly.
+
+> For more info on this process:
+>
+> - <i>GitHub README</i> - https://github.com/nblaisdell2/express-ts-starter#using-cicd
+> - <i>Confluence Tutorial</i> - [Deploy an API via Lambda & API Gateway](https://nblaisdell.atlassian.net/wiki/spaces/~701210f4b5f4c121e4cd5804ebc078dd6b379/pages/45383681/Deploy+an+API+on+Lambda+API+Gateway)
+
 <br/>
 
 ## Overview
