@@ -220,13 +220,6 @@ export const getPostingMonths = (
 
   let currMonth = parseISO(nextPaydate);
 
-  // // When calculating months ON the user's paydate, we'll adjust to
-  // // the following paydate, since it won't be incremented until they
-  // // log in any day after this paydate.
-  // if (isSameDay(currMonth, startOfToday())) {
-  //   currMonth = incrementDateByFrequency(currMonth, payFreq);
-  // }
-
   // if (DEBUG) log("amounts", { totalAmt, totalDesired, currMonth });
 
   // Keep finding months until

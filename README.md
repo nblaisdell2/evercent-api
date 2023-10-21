@@ -2,12 +2,63 @@
 
 This is an ExpressJS API which is used in conjunction with EverCent, an automated budgeting tool.
 In its current state, this API is meant to be used internally for EverCent, and is <u>not</u> a general-purpose API for multiple applications.
+<br/>
 
 > To learn more about Evercent:
 >
 > - Github Repo - https://github.com/nblaisdell2/evercent-app
 > - Evercent Documentation - https://nblaisdell.atlassian.net/wiki/spaces/E/overview
 
+<br/>
+
+## Setup
+
+1. First, clone this repo and install the required dependencies for this API
+
+```shell
+# Clone repo and move into repo directory
+git clone https://github.com/nblaisdell2/evercent-api.git && cd evercent-api
+
+# Install required dependencies
+npm install
+```
+
+<br/>
+
+2. Next, create a `.env` file with the following environment variables:
+   - The database variables should correspond to an existing SQL Server database, which is what this API is using as its database
+   - The YNAB API variables can be gathered when creating a new YNAB API application
+     - <i>For more details:</i> https://api.ynab.com/
+
+```shell
+# Database environment variables
+DB_HOST="{DB_HOST}"
+DB_USER="{DB_USER}"
+DB_PWD="{DB_PWD}"
+DB_NAME="{DB_NAME}"
+
+# Various Base URLs (one for *this* API, and one for the client *using* this API)
+API_BASE_URL="{API_BASE_URL}"
+CLIENT_BASE_URL="{CLIENT_BASE_URL}"
+
+# YNAB API variables
+YNAB_CLIENT_ID="{YNAB_CLIENT_ID}"
+YNAB_CLIENT_SECRET="{YNAB_CLIENT_SECRET}"
+YNAB_REDIRECT_URI="{YNAB_REDIRECT_URI}"
+```
+
+<br/>
+
+3. Finally, run the API using the following command
+
+```shell
+# Run the API
+npm run dev
+```
+
+<br/>
+
+At this point, you can use Postman, or any other HTTP request library, to interact with this API!
 <br/>
 
 ## Overview
@@ -28,6 +79,8 @@ When the user connects their budget, Evercent will redirect them to the YNAB aut
 When using the YNAB API, we are given a set of Access/Refresh tokens that can be used on behalf of our authorized user, and these tokens have a time limit of 2 hours that they can be used, at which point they need to be refreshed using the refresh token provided. When we do so, we'll be given a new set of Access/Refresh tokens, in order to continually repeat the process.
 
 Our API will take measures to ensure that these tokens are always kept updated appropriately, so that the user will only ever have to connect and authorize their YNAB account once, and the refreshing of these tokens will happen automatically in the background.
+
+> To learn more about using the YNAB API, see: https://api.ynab.com/
 
 <br/>
 
