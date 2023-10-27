@@ -291,7 +291,10 @@ export const getPostingMonths = (
       // When we have a bit left over, due to floating-point numbers,
       // but not enough for even 1 cent (so less than 0.01), we'll stop
       // adding months, since we've essentially run out
-      if (roundNumber(postAmt, 2) <= 0) break;
+      if (roundNumber(postAmt, 2) <= 0) {
+        currMonth = addMonths(currMonth, 1);
+        continue;
+      }
 
       // const month = zonedTimeToUtc(
       //   parse(bm.month, "yyyy-MM-dd", new Date()),
