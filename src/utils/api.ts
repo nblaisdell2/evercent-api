@@ -13,15 +13,16 @@ const instance = axios.create({
 });
 
 function getAxiosError(err: any): APIResponse {
-  const errMsg =
-    "AxiosError (" +
-    err.response.status +
-    " - " +
-    err.code +
-    ") // " +
-    (typeof err.response.data.error === "object"
-      ? err.response.data.error.detail
-      : err.response.data.error);
+  const errMsg = err?.response
+    ? "AxiosError (" +
+      (err?.response?.status || "Unknown Status") +
+      " - " +
+      err.code +
+      ") // " +
+      (typeof err.response.data.error === "object"
+        ? err.response.data.error.detail
+        : err.response.data.error)
+    : err.code + " " + err.message;
   return {
     data: null,
     headers: AxiosHeaders.from({}),

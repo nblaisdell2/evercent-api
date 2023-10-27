@@ -131,11 +131,6 @@ const calculateAdjustedAmount = (
     return 0;
   }
 
-  const catAmtByFreq = getAmountByFrequency(
-    category.amount,
-    category.regularExpenseDetails
-  );
-
   let numMonths = 0;
   if (!recalculate) {
     numMonths = category.regularExpenseDetails.monthsDivisor;
@@ -162,11 +157,18 @@ const calculateAdjustedAmount = (
       const dtDueDate = startOfMonth(
         parseISO(category.regularExpenseDetails.nextDueDate)
       );
-      numMonths = differenceInMonths(dtThisMonth, dtDueDate);
+      numMonths = differenceInMonths(dtDueDate, dtThisMonth) + 1;
     }
   }
 
+  if (numMonths == 0) return category.amount;
+
   const catAmtDivided = category.amount / numMonths;
+
+  const catAmtByFreq = getAmountByFrequency(
+    category.amount,
+    category.regularExpenseDetails
+  );
 
   // When we have fewer months than expected to pay something off, we'll
   // need to pay more per month, which is accounted for in the "catAmtDivided > catAmtByFreq"
@@ -174,11 +176,21 @@ const calculateAdjustedAmount = (
   // would be much lower than expected per month, we'll still pay off the amount by
   // frequency, instead of that much lower amount, which can be difficult to keep
   // track of.
+  let finalAdjAmt = 0;
   if (catAmtDivided > catAmtByFreq) {
-    return catAmtDivided;
+    finalAdjAmt = catAmtDivided;
   } else {
-    return catAmtByFreq;
+    finalAdjAmt = catAmtByFreq;
   }
+
+  if (!Number.isInteger(finalAdjAmt)) {
+    log("NOT A WHOLE NUMBER", finalAdjAmt);
+    finalAdjAmt += 0.01;
+  } else {
+    log("IS A WHOLE NUMBER", finalAdjAmt);
+  }
+
+  return finalAdjAmt;
 };
 
 const getNumberOfMonthsByFrequency = (
@@ -507,7 +519,7 @@ export const getCategoryData = async (
   nextPaydate: string
 ) => {
   const budgetCategories = getBudgetCategories(budget);
-  // log(JSON.stringify({ details: budgetCategories }));
+  log(JSON.stringify({ details: budgetCategories }));
 
   // ========================
   // 1. Refresh and return categories from database
