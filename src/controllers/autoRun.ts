@@ -132,12 +132,13 @@ export const lockAutoRuns = async function (
       next,
       UserID,
       BudgetID,
+      budget.months,
       PayFrequency,
       categoryData.categoryGroups
     );
     if (!autoRunData) return;
 
-    // log("autoRunData", autoRunData.autoRuns);
+    log("autoRunData", autoRunData.autoRuns);
 
     const autoRunCategories = getAutoRunCategories(autoRunData.autoRuns);
     log("autoRunData2", autoRunCategories);
@@ -164,7 +165,7 @@ export const lockAutoRuns = async function (
     }
   }
 
-  log(lockedResults);
+  log(JSON.stringify({ results: lockedResults }));
 
   // 3. Run the stored procedure for locking the results using our JSON
   queryRes = await execute(req, "spEV_LockAutoRuns", [

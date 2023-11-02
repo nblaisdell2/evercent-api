@@ -276,6 +276,7 @@ const getAutoRunDetails = (
   payFreq: PayFrequency,
   pastRuns: boolean
 ) => {
+  log("Do i have autoRunData?", autoRunData);
   const autoRuns = autoRunData.map((ar) => {
     const { RunID, RunTime, IsLocked } = ar;
 
@@ -316,15 +317,20 @@ export const getAutoRunData = async (
   req: Request,
   next: NextFunction,
   userID: string,
-  budget: Budget,
+  budgetID: string,
+  budgetMonths: BudgetMonth[],
   payFreq: PayFrequency,
   categories: CategoryGroup[]
 ) => {
+  log("What are my IDs?", userID, budgetID);
+
   const queryRes = await query(req, "spEV_GetAutoRunData", [
     { name: "UserID", value: userID },
-    { name: "BudgetID", value: budget.id },
+    { name: "BudgetID", value: budgetID },
   ]);
   if (sqlErr(next, queryRes)) return null;
+
+  log("queryRes", queryRes);
 
   // recalculate the posting months for each category, if the autoRuns are set
   // so that we use the correct "nextPaydate", when the user tries to calculate
@@ -339,7 +345,7 @@ export const getAutoRunData = async (
             ...c,
             postingMonths: getPostingMonths(
               c,
-              budget.months,
+              budgetMonths,
               payFreq,
               new Date(queryRes.resultData[0][0].RunTime).toISOString()
             ),

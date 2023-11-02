@@ -76,7 +76,8 @@ export const getAllUserData = async function (
       req,
       next,
       userData.userID,
-      budget,
+      userData.budgetID,
+      budget.months,
       userData.payFrequency,
       categoryData.categoryGroups
     );
