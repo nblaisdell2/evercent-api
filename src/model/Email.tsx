@@ -120,7 +120,7 @@ function Email(results: EmailProps) {
                     </span>
                   </Text>
                 </Column>
-                <Column style={{ width: "2%" }}></Column>
+                {/* <Column style={{ width: "2%" }}></Column>
                 <Column
                   style={{
                     textAlign: "center",
@@ -152,7 +152,7 @@ function Email(results: EmailProps) {
                       {results.runTime}
                     </span>
                   </Text>
-                </Column>
+                </Column> */}
               </Row>
             </Section>
 
