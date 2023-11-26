@@ -4,6 +4,8 @@ import {
   cancelAutoRuns,
   lockAutoRuns,
   runAutomation,
+  sendEvercentEmail,
+  sendTestEmail,
 } from "../controllers/autoRun";
 
 const router: Router = express.Router();
@@ -13,5 +15,6 @@ router.route("/").post(saveAutoRunDetails);
 router.route("/cancel").post(cancelAutoRuns);
 router.route("/lock").post(lockAutoRuns);
 router.route("/run").post(runAutomation);
+router.route("/sendEmail").post(sendTestEmail);
 
 export default router;

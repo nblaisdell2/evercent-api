@@ -1,8 +1,11 @@
+import React from "react";
 import { Request, Response, NextFunction } from "express";
-import { getDistinctValues, sleep } from "../utils/util";
+import { find, getDistinctValues, sleep } from "../utils/util";
 import { execute, query, sqlErr } from "../utils/sql";
 import { log } from "../utils/log";
 import {
+  BudgetMonth,
+  BudgetMonthCategory,
   getBudget,
   getBudgetCategory,
   getBudgetMonth,
@@ -10,11 +13,18 @@ import {
 } from "../model/budget";
 import { dueDateAndAmountSet, getCategoryData } from "../model/category";
 import { getAutoRunCategories, getAutoRunData } from "../model/autoRun";
+import { createTransport } from "nodemailer";
+import { render } from "@react-email/render";
+import Email, { EmailProps, EmailPropsGroup } from "../model/Email";
+import { sendEmail } from "../utils/email";
+import { format, parseISO } from "date-fns";
 
 type LockedResult = {
   runID: string;
+  userEmail?: string;
   userID?: string;
   budgetID?: string;
+  runTime?: string;
   categoryGUID?: string;
   categoryGroupID?: string;
   categoryID: string;
@@ -216,7 +226,7 @@ export const runAutomation = async function (
     log("Running automation for RunID: '" + currRunID + "'");
 
     const categoryData = queryData.filter((r) => r.RunID == currRunID);
-    const { UserID, BudgetID } = categoryData[0];
+    const { UserID, UserEmail, BudgetID, RunTime } = categoryData[0];
 
     const budget = await getBudget(
       req,
@@ -226,6 +236,10 @@ export const runAutomation = async function (
     );
     if (!budget) return;
 
+    let bm: BudgetMonth | null = null;
+    let bc: BudgetMonthCategory | null = null;
+
+    let results: EmailPropsGroup[] = [];
     const categoryIDs = getDistinctValues(categoryData, "CategoryID");
     for (let j = 0; j < categoryIDs.length; j++) {
       const currCategoryID = categoryIDs[j];
@@ -239,8 +253,8 @@ export const runAutomation = async function (
 
         const currMonth = new Date(category.PostingMonth);
 
-        const bm = getBudgetMonth(budget.months, currMonth);
-        const bc = getBudgetCategory(
+        bm = getBudgetMonth(budget.months, currMonth);
+        bc = getBudgetCategory(
           bm,
           category.CategoryGroupID as string,
           category.CategoryID
@@ -292,6 +306,49 @@ export const runAutomation = async function (
           { name: "NewAmountBudgeted", value: newBudgeted },
         ]);
 
+        // Adding Details for email later on
+        // ============================================
+        if (
+          !results.some(
+            (a) => a.groupID.toLowerCase() == bc?.categoryGroupID.toLowerCase()
+          )
+        ) {
+          results.push({
+            groupID: bc.categoryGroupID,
+            groupName: bc.categoryGroupName,
+            categories: [],
+          });
+        }
+
+        const currGroup = find(
+          results,
+          (a) => a.groupID.toLowerCase() == bc?.categoryGroupID.toLowerCase()
+        );
+        if (
+          !currGroup.categories.some(
+            (a) => a.categoryID.toLowerCase() == bc?.categoryID.toLowerCase()
+          )
+        ) {
+          currGroup.categories.push({
+            categoryID: bc.categoryID,
+            categoryName: bc.name,
+            months: [],
+          });
+        }
+
+        const currCat = find(
+          currGroup.categories,
+          (a) => a.categoryID.toLowerCase() == bc?.categoryID.toLowerCase()
+        );
+        if (!currCat.months.some((a) => a.monthName == category.PostingMonth)) {
+          currCat.months.push({
+            monthName: category.PostingMonth,
+            amountPosted: category.AmountToPost,
+            newAmtBudgeted: newBudgeted,
+          });
+        }
+        // ============================================
+
         // Sleep for 2 seconds between each post to YNAB
         log("Sleeping...");
         await sleep(2000);
@@ -342,6 +399,45 @@ export const runAutomation = async function (
       { name: "RunID", value: currRunID },
     ]);
     if (sqlErr(next, cleanupQueryRes)) return;
+
+    // PREPARING EMAIL
+    // ======================
+
+    // Sort the groups by their order in YNAB,
+    let sortedResults = results.sort(
+      (a, b) =>
+        (bm as BudgetMonth).groups.findIndex(
+          (cg) => cg.categoryGroupID.toLowerCase() == a.groupID.toLowerCase()
+        ) -
+        (bm as BudgetMonth).groups.findIndex(
+          (cg) => cg.categoryGroupID.toLowerCase() == b.groupID.toLowerCase()
+        )
+    );
+    // Then sort the categories within each of the groups based on their order in YNAB
+    for (let i = 0; i < sortedResults.length; i++) {
+      let currGroup = find(
+        (bm as BudgetMonth).groups,
+        (cg) =>
+          cg.categoryGroupID.toLowerCase() ==
+          sortedResults[i].groupID.toLowerCase()
+      );
+      sortedResults[i].categories = sortedResults[i].categories.sort(
+        (a, b) =>
+          currGroup.categories.findIndex(
+            (c) => c.categoryID.toLowerCase() == a.categoryID.toLowerCase()
+          ) -
+          currGroup.categories.findIndex(
+            (c) => c.categoryID.toLowerCase() == b.categoryID.toLowerCase()
+          )
+      );
+    }
+
+    await sendEvercentEmail(
+      UserEmail as string,
+      RunTime as string,
+      sortedResults
+    );
+    // ======================
   }
 
   log("EVERCENT AUTOMATION - COMPLETE!");
@@ -350,4 +446,117 @@ export const runAutomation = async function (
     data: { status: "EverCent Automation completed successfully!" },
     message: "EverCent Automation completed successfully!",
   });
+};
+
+export const sendTestEmail = async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const emailProps: EmailPropsGroup[] = [
+    {
+      groupID: "",
+      groupName: "Immediate Obligations",
+      categories: [
+        {
+          categoryID: "",
+          categoryName: "Groceries",
+          months: [
+            {
+              monthName: "NOV 2023",
+              amountPosted: 69.13,
+              newAmtBudgeted: 100,
+            },
+            {
+              monthName: "DEC 2023",
+              amountPosted: 30.87,
+              newAmtBudgeted: 100,
+            },
+          ],
+        },
+        {
+          categoryID: "",
+          categoryName: "Phone",
+          months: [
+            {
+              monthName: "NOV 2023",
+              amountPosted: 30,
+              newAmtBudgeted: 100,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      groupID: "",
+      groupName: "Subscriptions",
+      categories: [
+        {
+          categoryID: "",
+          categoryName: "Groceries",
+          months: [
+            {
+              monthName: "NOV 2023",
+              amountPosted: 69.13,
+              newAmtBudgeted: 100,
+            },
+            {
+              monthName: "DEC 2023",
+              amountPosted: 30.87,
+              newAmtBudgeted: 100,
+            },
+          ],
+        },
+        {
+          categoryID: "",
+          categoryName: "Phone",
+          months: [
+            {
+              monthName: "NOV 2023",
+              amountPosted: 30,
+              newAmtBudgeted: 100,
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  await sendEvercentEmail(
+    "nblaisdell2@gmail.com",
+    new Date().toISOString(),
+    emailProps
+  );
+
+  next({ msg: "sent email successfully!" });
+};
+
+export const sendEvercentEmail = async function (
+  userEmail: string,
+  runTime: string,
+  emailProps: EmailPropsGroup[]
+) {
+  const info = await sendEmail({
+    emailComponent: (
+      <Email
+        runTime={format(
+          parseISO(new Date(runTime).toISOString()),
+          "MM/dd/yyyy @ h:mma"
+        )}
+        groups={emailProps}
+      />
+    ),
+    from: '"Evercent" <nblaisdell2@gmail.com>',
+    to: userEmail,
+    subject: "Budget Automation Results",
+    attachments: [
+      {
+        filename: "evercent_logo.png",
+        path: __dirname + "/../public/evercent_logo.png",
+        cid: "logo",
+      },
+    ],
+  });
+
+  console.log("Message sent: %s", info.messageId);
 };
