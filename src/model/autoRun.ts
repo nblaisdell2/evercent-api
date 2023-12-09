@@ -1,12 +1,13 @@
 import { Request, NextFunction } from "express";
 import { log } from "../utils/log";
 import { query, sqlErr } from "../utils/sql";
-import { find, getDistinctValues } from "../utils/util";
+import { find, generateUUID, getDistinctValues } from "../utils/util";
 import { PayFrequency, getAmountByPayFrequency } from "./user";
 import {
   Budget,
   BudgetMonth,
   BudgetMonthCategory,
+  getBudget,
   getBudgetCategories,
 } from "./budget";
 import { CategoryGroup, getPostingMonths } from "./category";
@@ -71,6 +72,7 @@ type AutoRunCategoryDB = {
 const createAutoRunCategoryGroups = (
   categoriesDB: AutoRunCategoryDB[],
   categories: CategoryGroup[],
+  budgetMonths: BudgetMonth[],
   payFreq: PayFrequency,
   getPastRuns: boolean
 ): AutoRunCategoryGroup[] => {
@@ -79,8 +81,43 @@ const createAutoRunCategoryGroups = (
   let returnPostingMonths: AutoRunCategoryMonth[] = [];
 
   returnGroups = [];
-  const groupIDs = getDistinctValues(categoriesDB, "CategoryGroupID");
+
+  // For cany categories that we aren't able to find a categoryGroupID for are ones
+  // that have been hidden/deleted from the user's budget since that run.
+  // This will find that groupID, so the rest of the code will work as intended,
+  // as well as generate a new CategoryGUID, again just so the code will work.
+  const backfilled = categoriesDB.map((c) => {
+    if (!c.CategoryGroupID) {
+      let foundGroupID = "";
+      for (let i = 0; i < budgetMonths[0].groups.length; i++) {
+        for (let j = 0; j < budgetMonths[0].groups[i].categories.length; j++) {
+          if (
+            budgetMonths[0].groups[i].categories[j].categoryID.toLowerCase() ==
+            c.CategoryID.toLowerCase()
+          ) {
+            foundGroupID =
+              budgetMonths[0].groups[i].categories[j].categoryGroupID;
+            break;
+          }
+        }
+
+        if (foundGroupID != "") {
+          break;
+        }
+      }
+      return {
+        ...c,
+        CategoryGUID: generateUUID().toUpperCase(),
+        CategoryGroupID: foundGroupID.toUpperCase(),
+      };
+    }
+    return c;
+  });
+
+  log("categoriesDB", backfilled);
+  const groupIDs = getDistinctValues(backfilled, "CategoryGroupID");
   log("groupIDs", groupIDs);
+
   for (let i = 0; i < categories.length; i++) {
     const currGroup = categories[i];
     const groupID = currGroup.groupID.toLowerCase();
@@ -92,7 +129,7 @@ const createAutoRunCategoryGroups = (
 
     let groupName = currGroup.groupName;
 
-    const categoriesForGroupDB = categoriesDB.filter(
+    const categoriesForGroupDB = backfilled.filter(
       (cat) => cat.CategoryGroupID.toLowerCase() == groupID
     );
     const categoryIDs = getDistinctValues(categoriesForGroupDB, "CategoryID");
@@ -110,15 +147,6 @@ const createAutoRunCategoryGroups = (
       const categoriesForIDDB = categoriesForGroupDB.filter(
         (cat) => cat.CategoryID.toLowerCase() == categoryID
       );
-
-      // const budgetCategory = find(
-      //   budgetCategories,
-      //   (bc) =>
-      //     bc.categoryGroupID.toLowerCase() == groupID &&
-      //     bc.categoryID.toLowerCase() == categoryID
-      // );
-      // groupName = budgetCategory.categoryGroupName;
-      // categoryName = budgetCategory.name;
 
       if (getPastRuns) {
         for (let k = 0; k < categoriesForIDDB.length; k++) {
@@ -185,7 +213,72 @@ const createAutoRunCategoryGroups = (
       }
     }
 
-    log("pushing group", groupName);
+    // If we have any past run data for categories that have since been hidden/deleted
+    // from the user's budget, we'll go through one more time and make sure to add those
+    // details, using the YNAB budget details gathered earlier, rather than relying on the
+    // custom Evercent list of categories, since that will always exclude hidden/deleted
+    // categories.
+    if (getPastRuns && returnCategories.length < categoriesForGroupDB.length) {
+      for (let j = 0; j < categoriesForGroupDB.length; j++) {
+        const currCategory = categoriesForGroupDB[j];
+        const categoryID = currCategory.CategoryID.toLowerCase();
+
+        // If we already added this category, don't re-add it
+        if (
+          returnCategories.some(
+            (rc) => rc.categoryID.toLowerCase() == categoryID
+          )
+        ) {
+          continue;
+        }
+
+        const categoriesForIDDB = categoriesForGroupDB.filter(
+          (cat) => cat.CategoryID.toLowerCase() == categoryID
+        );
+
+        // find the category name in the "budget" details, rather than
+        // the "category" details, in the previous for loop
+        let categoryName = "";
+        const foundCategory = budgetMonths[0].groups
+          .find(
+            (g) =>
+              g.categoryGroupID.toLowerCase() ==
+              currCategory.CategoryGroupID.toLowerCase()
+          )
+          ?.categories.find((c) => c.categoryID.toLowerCase() == categoryID);
+        if (foundCategory) {
+          categoryName = foundCategory.name;
+        }
+
+        returnPostingMonths = [];
+        for (let k = 0; k < categoriesForIDDB.length; k++) {
+          const categoryDB = categoriesForIDDB[k];
+
+          returnPostingMonths.push({
+            postingMonth: categoryDB.PostingMonth,
+            included: true,
+            amountToPost: categoryDB.AmountToPost,
+            amountPosted: categoryDB.AmountPosted,
+            oldAmountBudgeted: categoryDB.OldAmountBudgeted,
+            newAmountBudgeted: categoryDB.NewAmountBudgeted,
+          });
+        }
+
+        returnCategories.push({
+          categoryGUID: categoriesForIDDB[0].CategoryGUID,
+          categoryID: categoriesForIDDB[0].CategoryID,
+          categoryName,
+          categoryAmount: categoriesForIDDB[0].CategoryAmount,
+          categoryExtraAmount: categoriesForIDDB[0].CategoryExtraAmount,
+          categoryAdjustedAmount: categoriesForIDDB[0].CategoryAdjustedAmount,
+          categoryAdjustedAmountPerPaycheck:
+            categoriesForIDDB[0].CategoryAdjAmountPerPaycheck,
+          postingMonths: returnPostingMonths,
+          included: categoriesForIDDB[0].IsIncluded,
+        });
+      }
+    }
+
     returnGroups.push({
       groupID: groupID,
       groupName: groupName,
@@ -273,6 +366,7 @@ const getAutoRunDetails = (
   autoRunData: AutoRunDB[],
   autoRunCategoryData: AutoRunCategoryDB[],
   categories: CategoryGroup[],
+  budgetMonths: BudgetMonth[],
   payFreq: PayFrequency,
   pastRuns: boolean
 ) => {
@@ -296,6 +390,7 @@ const getAutoRunDetails = (
       autoRunCategoryGroups = createAutoRunCategoryGroups(
         autoRunCategoriesDB,
         categories,
+        budgetMonths,
         payFreq,
         pastRuns
       );
@@ -360,6 +455,7 @@ export const getAutoRunData = async (
     queryRes.resultData[0],
     queryRes.resultData[1],
     categories,
+    budgetMonths,
     payFreq,
     false
   );
@@ -369,6 +465,7 @@ export const getAutoRunData = async (
     queryRes.resultData[2],
     queryRes.resultData[3],
     categories,
+    budgetMonths,
     payFreq,
     true
   );

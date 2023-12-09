@@ -1,5 +1,7 @@
 import { v4 } from "uuid";
 export const generateUUID = v4;
+import { writeFile } from "fs";
+import path from "path";
 
 export const roundNumber = (num: number, decimals: number = 0) => {
   const mul = Math.pow(10, decimals);
@@ -16,6 +18,14 @@ export const find = <T>(
   thisArg?: any
 ): T => {
   return list.filter(predicate)[0];
+};
+
+export const writeDataToFile = (
+  filename: string,
+  data: any,
+  cb: () => void
+) => {
+  writeFile(__dirname + "/" + filename, JSON.stringify(data), "utf-8", cb);
 };
 
 export const getDistinctValues = <T, V extends keyof T>(

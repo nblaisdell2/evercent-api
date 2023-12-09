@@ -468,10 +468,15 @@ const createCategoryList = (
   payFreq: PayFrequency,
   nextPaydate: string
 ): Category[] => {
-  return group.categories.map((cat) => {
-    const currCatDB = find(categoryDataDB, (c) => sameCategory(c, cat));
-    return createCategory(currCatDB, cat, months, payFreq, nextPaydate);
-  });
+  return (
+    group.categories
+      // remove hidden/deleted categories when generating the Evercent category list
+      .filter((c) => !c.hidden && !c.deleted)
+      .map((cat) => {
+        const currCatDB = find(categoryDataDB, (c) => sameCategory(c, cat));
+        return createCategory(currCatDB, cat, months, payFreq, nextPaydate);
+      })
+  );
 };
 
 const createCategoryGroupList = (
@@ -481,25 +486,33 @@ const createCategoryGroupList = (
   nextPaydate: string
 ): CategoryGroup[] => {
   const budgetCategoryGroups = budget.months[0].groups;
-  return budgetCategoryGroups.map((grp) => {
-    const newCategories = createCategoryList(
-      grp,
-      categoryDataDB,
-      budget.months,
-      payFreq,
-      nextPaydate
-    );
+  return (
+    budgetCategoryGroups
+      // remove hidden/deleted category groups when generating the Evercent category list
+      .filter((bg) => !bg.hidden && !bg.deleted)
+      .map((grp) => {
+        const newCategories = createCategoryList(
+          grp,
+          categoryDataDB,
+          budget.months,
+          payFreq,
+          nextPaydate
+        );
 
-    return {
-      groupID: grp.categoryGroupID.toUpperCase(),
-      groupName: grp.categoryGroupName,
-      amount: sum(newCategories, "amount"),
-      extraAmount: sum(newCategories, "extraAmount"),
-      adjustedAmount: sum(newCategories, "adjustedAmount"),
-      adjustedAmountPlusExtra: sum(newCategories, "adjustedAmountPlusExtra"),
-      categories: newCategories,
-    } as CategoryGroup;
-  });
+        return {
+          groupID: grp.categoryGroupID.toUpperCase(),
+          groupName: grp.categoryGroupName,
+          amount: sum(newCategories, "amount"),
+          extraAmount: sum(newCategories, "extraAmount"),
+          adjustedAmount: sum(newCategories, "adjustedAmount"),
+          adjustedAmountPlusExtra: sum(
+            newCategories,
+            "adjustedAmountPlusExtra"
+          ),
+          categories: newCategories,
+        } as CategoryGroup;
+      })
+  );
 };
 
 const getExcludedCategories = (dbData: any): ExcludedCategory[] => {
@@ -521,7 +534,19 @@ export const getCategoryData = async (
   payFreq: PayFrequency,
   nextPaydate: string
 ) => {
-  const budgetCategories = getBudgetCategories(budget);
+  // Remove the hidden/deleted fields, which were added to the budget object
+  // but aren't expected in the upcoming SQL query
+  const budgetCategories = getBudgetCategories(budget).map((bc) => {
+    return {
+      categoryGroupID: bc.categoryGroupID,
+      categoryGroupName: bc.categoryGroupName,
+      categoryID: bc.categoryID,
+      name: bc.name,
+      budgeted: bc.budgeted,
+      activity: bc.activity,
+      available: bc.available,
+    };
+  });
   log(JSON.stringify({ details: budgetCategories }));
 
   // ========================

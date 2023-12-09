@@ -32,6 +32,8 @@ export type BudgetMonthCategoryGroup = {
   activity: number;
   available: number;
   categories: BudgetMonthCategory[];
+  hidden: boolean;
+  deleted: boolean;
 };
 
 export type BudgetMonthCategory = {
@@ -42,6 +44,8 @@ export type BudgetMonthCategory = {
   budgeted: number;
   activity: number;
   available: number;
+  hidden?: boolean;
+  deleted?: boolean;
 };
 
 const createBudgetCategories = (
@@ -52,26 +56,32 @@ const createBudgetCategories = (
 ): BudgetMonthCategory[] => {
   const filteredSortedCategories = sortedCategories.filter(
     (c) =>
-      !c.deleted &&
-      !c.hidden &&
+      // !c.deleted &&
+      // !c.hidden &&
       c.category_group_id.toLowerCase() == groupID.toLowerCase()
   );
 
-  const newCategories = filteredSortedCategories.map((c) => {
+  const newCategories = filteredSortedCategories.reduce((prev, curr) => {
     const monthCategory = find(
       monthCategories,
-      (mc) => mc.id.toLowerCase() == c.id.toLowerCase()
+      (mc) => mc.id.toLowerCase() == curr.id.toLowerCase()
     );
-    return {
-      categoryGroupID: groupID,
-      categoryGroupName: groupName,
-      categoryID: monthCategory.id,
-      name: monthCategory.name,
-      budgeted: monthCategory.budgeted / 1000,
-      activity: monthCategory.activity / 1000,
-      available: monthCategory.balance / 1000,
-    };
-  });
+    if (!monthCategory) return prev;
+    return [
+      ...prev,
+      {
+        categoryGroupID: groupID,
+        categoryGroupName: groupName,
+        categoryID: monthCategory.id,
+        name: monthCategory.name,
+        budgeted: monthCategory.budgeted / 1000,
+        activity: monthCategory.activity / 1000,
+        available: monthCategory.balance / 1000,
+        hidden: monthCategory.hidden,
+        deleted: monthCategory.deleted,
+      } as BudgetMonthCategory,
+    ];
+  }, [] as BudgetMonthCategory[]);
 
   return newCategories;
 };
@@ -99,6 +109,8 @@ const createBudgetCategoryGroups = (
       budgeted: totalBudgeted,
       available: totalAvailable,
       categories: newCategories,
+      hidden: curr.hidden,
+      deleted: curr.deleted,
     };
   });
 };
@@ -202,7 +214,7 @@ export const getBudget = async (
 
 export const getBudgetCategories = (budget: Budget) => {
   return budget.months[0].groups.reduce((prev, curr) => {
-    return [...prev, ...curr.categories];
+    return [...prev, ...curr.categories.filter((c) => !c.hidden && !c.deleted)];
   }, [] as BudgetMonthCategory[]);
 };
 

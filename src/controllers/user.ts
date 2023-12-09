@@ -2,21 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { execute, sqlErr } from "../utils/sql";
 import { log } from "../utils/log";
 
-import { PayFrequency, UserData, getUserData } from "../model/user";
-import {
-  Budget,
-  BudgetMonth,
-  FAKE_BUDGET_ID,
-  getBudget,
-} from "../model/budget";
+import { UserData, getUserData } from "../model/user";
+import { Budget, FAKE_BUDGET_ID, getBudget } from "../model/budget";
 import {
   CategoryGroup,
   ExcludedCategory,
   getCategoryData,
-  getPostingMonths,
 } from "../model/category";
 import { AutoRun, getAutoRunData } from "../model/autoRun";
-import { parseISO } from "date-fns";
 
 type EvercentData = {
   userData: UserData | null;
@@ -32,6 +25,37 @@ export const getAllUserData = async function (
   res: Response,
   next: NextFunction
 ) {
+  // const { UserEmail } = req.query;
+  // let allData: EvercentData = {
+  //   userData: null,
+  //   budget: null,
+  //   categoryGroups: [],
+  //   excludedCategories: [],
+  //   autoRuns: [],
+  //   pastRuns: [],
+  // };
+
+  // const userData = await getUserData(req, next, UserEmail as string);
+  // if (!userData) return;
+
+  // allData.userData = userData;
+
+  // if (userData.budgetID != FAKE_BUDGET_ID) {
+  //   const budget = await getBudget(
+  //     req,
+  //     next,
+  //     userData.userID,
+  //     userData.budgetID
+  //   );
+  //   if (!budget) return;
+  //   allData.budget = budget;
+
+  //   next({
+  //     data: budget,
+  //     message: "Checking budget for user: " + allData.userData.username,
+  //   });
+  // }
+
   const { UserEmail } = req.query;
   let allData: EvercentData = {
     userData: null,
@@ -86,6 +110,28 @@ export const getAllUserData = async function (
     allData.autoRuns = autoRunData.autoRuns;
     allData.pastRuns = autoRunData.pastRuns;
     allData.categoryGroups = autoRunData.categoryGroups;
+
+    // Since we included "hidden" & "deleted" items, in order to account for past run
+    // data where the category has since been hidden or deleted in the user's budget, but
+    // we still need the data for displaying the category name and posted amounts, at this point
+    // the code, just before we return it to the Evercent application, we'll adjust each of the
+    // budget months to remove those hidden/deleted categories/groups, as the application expects.
+    allData.budget = {
+      ...allData.budget,
+      months: budget.months.map((m) => {
+        return {
+          ...m,
+          groups: m.groups
+            .filter((g) => !g.hidden && !g.deleted)
+            .map((g) => {
+              return {
+                ...g,
+                categories: g.categories.filter((c) => !c.hidden && !c.deleted),
+              };
+            }),
+        };
+      }),
+    };
   }
 
   next({

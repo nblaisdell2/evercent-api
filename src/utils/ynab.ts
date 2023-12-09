@@ -1,7 +1,7 @@
 import { NextFunction, Request } from "express";
 import { AxiosResponseHeaders } from "axios";
 import { log, logError } from "./log";
-import { roundNumber } from "./util";
+import { roundNumber, writeDataToFile } from "./util";
 import { getAPIResponse } from "./api";
 import { execute, query } from "./sql";
 
@@ -141,16 +141,19 @@ const getYNABBudgetData = async (
 
   // Filter unwanted category groups BEFORE sending back to the user, so I don't
   // have to remember to do it everywhere else
+  // Keeps any hidden/deleted groups, however, in case we need the details for any
+  // past runs
   budgetData.category_groups = budgetData.category_groups.filter(
-    (grp) =>
-      !IGNORED_CATEGORY_GROUPS.includes(grp.name) && !grp.hidden && !grp.deleted
+    (grp) => !IGNORED_CATEGORY_GROUPS.includes(grp.name) // && !grp.hidden && !grp.deleted
   );
 
+  // Match on our groups above, but keep any hidden/deleted categories, in case we need
+  // the details for any past runs
   budgetData.categories = budgetData.categories.filter(
     (c) =>
-      budgetData.category_groups.find((grp) => grp.id == c.category_group_id) &&
-      !c.hidden &&
-      !c.deleted
+      budgetData.category_groups.find((grp) => grp.id == c.category_group_id) // &&
+    // !c.hidden &&
+    // !c.deleted
   );
 
   return budgetData;
