@@ -326,7 +326,7 @@ const updateYNABCategoryAmount = async (
     },
     params: {
       category: {
-        budgeted: roundNumber(newBudgetedAmount, 2) * 1000,
+        budgeted: Math.floor(roundNumber(newBudgetedAmount, 2) * 1000),
       },
     },
   });
