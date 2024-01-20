@@ -12,6 +12,7 @@ import userRouter from "./routes/userRouter";
 import autoRunRouter from "./routes/autoRunRouter";
 
 import { config } from "dotenv";
+import { sendEmail, sendEmailMessage } from "./utils/email";
 config();
 
 const app: Express = express();
@@ -83,8 +84,17 @@ app.use(async function (
   res.locals.error = req.app.get("env") === "development" ? err : {};
   logError(err.message);
 
+  console.log("err", err);
   const endpoint = req.method + " " + req.url;
   await logInfo(req, "Error", err.status || 500, endpoint, err.message);
+
+  await sendEmailMessage({
+    from: "Evercent API <nblaisdell2@gmail.com>",
+    to: "nblaisdell2@gmail.com",
+    subject: "Error!",
+    message: err.message,
+    attachments: [],
+  });
 
   // render the error page
   return res
