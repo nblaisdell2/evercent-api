@@ -372,9 +372,24 @@ const calculateMonthsAhead = (
       category.categoryID
     );
 
-    if (bc.budgeted < currPM.amount) break;
+    if (category.name == "Car Taxes") {
+      log({
+        category: category.name,
+        budgeted: bc.budgeted,
+        monthAmount: currPM.amount,
+      });
+    }
+    if (roundNumber(bc.budgeted, 2) < roundNumber(currPM.amount, 2)) break;
 
     monthsAhead += 1;
+
+    if (category.name == "Car Taxes") {
+      log({
+        category: category.name,
+        message: "Incrementing monthsAhead",
+        monthsAheadCurr: monthsAhead,
+      });
+    }
   }
 
   return monthsAhead;
