@@ -217,9 +217,9 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "Hulu";
+  const DEBUG = category.name == "Electric";
 
-  // if (DEBUG) log("category", { category, payFreq, nextPaydate });
+  if (DEBUG) log("category", { category, payFreq, nextPaydate });
 
   let postingMonths: PostingMonth[] = [];
   const useOverride = overrideNum != undefined;
@@ -232,7 +232,7 @@ export const getPostingMonths = (
 
   let currMonth = parseISO(nextPaydate);
 
-  // if (DEBUG) log("amounts", { totalAmt, totalDesired, currMonth });
+  if (DEBUG) log("amounts", { totalAmt, totalDesired, currMonth });
 
   // Keep finding months until
   //  1. We run out of money (totalAmt)
@@ -265,19 +265,20 @@ export const getPostingMonths = (
       // Get YNAB category "budgeted" amount
       // (use 0 if negative)
       if (bc.budgeted < totalDesired) {
-        desiredPostAmt = totalDesired - bc.budgeted;
+        desiredPostAmt = totalDesired - (bc.budgeted < 0 ? 0 : bc.budgeted);
       }
     } else {
       desiredPostAmt = totalDesired;
     }
 
-    // if (DEBUG) log("desiredPostAmt", { desiredPostAmt });
+    if (DEBUG) log("desiredPostAmt", { desiredPostAmt });
 
     if (
       // useOverride &&
       isEqual(parseISO(bm.month), startOfMonth(new Date())) &&
-      !category.regularExpenseDetails?.multipleTransactions &&
-      bc.activity < 0
+      ((!category.regularExpenseDetails?.multipleTransactions &&
+        bc.activity < 0) ||
+        bc.available >= desiredPostAmt)
     ) {
       currMonth = addMonths(currMonth, 1);
       continue;
