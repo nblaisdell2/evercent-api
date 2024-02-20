@@ -274,7 +274,7 @@ export const getPostingMonths = (
     if (DEBUG) log("desiredPostAmt", { desiredPostAmt });
 
     if (
-      // useOverride &&
+      !useOverride &&
       isEqual(parseISO(bm.month), startOfMonth(new Date())) &&
       ((!category.regularExpenseDetails?.multipleTransactions &&
         bc.activity < 0) ||
