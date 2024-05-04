@@ -125,7 +125,7 @@ const createBudgetMonths = (
   let tbb = 0;
   const newMonths = months.reduce((prev, curr, i) => {
     const ynabMonth = parseISO(curr.month as string);
-    if (i == 0) tbb = curr.tbb / 1000;
+    if (i == 0) tbb = curr.to_be_budgeted / 1000;
 
     if (ynabMonth > thisMonth || isEqual(ynabMonth, thisMonth)) {
       const groups = createBudgetCategoryGroups(
