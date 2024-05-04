@@ -125,7 +125,7 @@ const createBudgetMonths = (
   let tbb = 0;
   const newMonths = months.reduce((prev, curr, i) => {
     const ynabMonth = parseISO(curr.month as string);
-    if (i == 0) tbb = curr.to_be_budgeted / 1000;
+    if (i == 0) tbb = curr.tbb / 1000;
 
     if (ynabMonth > thisMonth || isEqual(ynabMonth, thisMonth)) {
       const groups = createBudgetCategoryGroups(
@@ -152,6 +152,7 @@ const createBudgetMonths = (
     return new Date(a.month).getTime() - new Date(b.month).getTime();
   });
 
+  // console.log("new months 0 = " + JSON.stringify(newMonths));
   newMonths[0].tbb = tbb;
 
   // Append 10-years-worth more months at the end of the list, in case I need them

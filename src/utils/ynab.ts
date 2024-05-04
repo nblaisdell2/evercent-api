@@ -53,7 +53,7 @@ export type YNABCategory = {
 export type YNABBudgetMonth = {
   month: string;
   categories: YNABCategory[];
-  to_be_budgeted: number;
+  tbb: number;
 };
 
 const CLIENT_ID = process.env.YNAB_CLIENT_ID;

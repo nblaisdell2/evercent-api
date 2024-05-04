@@ -217,18 +217,18 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "Electric";
+  const DEBUG = category.name == "YNAB";
 
   if (DEBUG) log("category", { category, payFreq, nextPaydate });
 
   let postingMonths: PostingMonth[] = [];
   const useOverride = overrideNum != undefined;
 
-  let totalAmt = getAmountByPayFrequency(
-    category.adjustedAmountPlusExtra,
-    payFreq
+  let totalAmt = roundNumber(
+    getAmountByPayFrequency(category.adjustedAmountPlusExtra, payFreq),
+    2
   );
-  let totalDesired = category.adjustedAmount;
+  let totalDesired = roundNumber(category.adjustedAmount, 2);
 
   let currMonth = parseISO(nextPaydate);
 
@@ -303,11 +303,17 @@ export const getPostingMonths = (
       const month = parseISO(bm.month).toISOString();
       postingMonths.push({
         month: month,
-        amount: postAmt,
+        amount: roundNumber(postAmt, 2),
         percent: 0,
       });
+      if (DEBUG)
+        log("Added month", {
+          month: month,
+          amount: roundNumber(postAmt, 2),
+          percent: 0,
+        });
 
-      totalAmt -= postAmt;
+      totalAmt -= roundNumber(postAmt, 2);
 
       // recalculate totalDesired using repeat frequency here
       // because of non-monthly regular expense && due date month is currMonth
@@ -321,9 +327,10 @@ export const getPostingMonths = (
           currMonth
         )
       ) {
-        // log(
-        //   "Recalculating totalDesired due to due date being met for category!"
-        // );
+        if (DEBUG)
+          log(
+            "Recalculating totalDesired due to due date being met for category!"
+          );
         totalDesired = calculateAdjustedAmount(category, months, true);
       }
     }
@@ -341,6 +348,7 @@ const calculateMonthsAhead = (
   payFreq: PayFrequency,
   nextPaydate: string
 ): number => {
+  const DEBUG = category.name == "YNAB";
   if (category.adjustedAmountPlusExtra == 0) return 0;
 
   let monthsAhead = 0;
@@ -358,6 +366,8 @@ const calculateMonthsAhead = (
     postingMonths.shift();
   }
 
+  if (DEBUG) log("Got posting months for YNAB", postingMonths);
+
   // Loop through each posting month and determine if we've already budgeted
   // the expected amount in our actual budget. If so, increment the monthsAhead
   // value and continue to the next month until either all months are exhausted,
@@ -372,6 +382,11 @@ const calculateMonthsAhead = (
       category.categoryID
     );
 
+    if (DEBUG)
+      log({
+        budgeted: roundNumber(bc.budgeted, 2),
+        pmAmount: roundNumber(currPM.amount, 2),
+      });
     if (roundNumber(bc.budgeted, 2) < roundNumber(currPM.amount, 2)) break;
 
     monthsAhead += 1;
