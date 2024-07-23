@@ -3,17 +3,14 @@ import type { Express, Request, Response, NextFunction } from "express";
 import createError, { HttpError } from "http-errors";
 import cors from "cors";
 
-import { createSharedConnectionPool } from "./utils/sql";
-import { log, logError, logInfo, routeLogger } from "./utils/log";
+import { log, logError } from "./utils/log";
 
 import indexRouter from "./routes/indexRouter";
 import budgetRouter from "./routes/budgetRouter";
 import userRouter from "./routes/userRouter";
 import autoRunRouter from "./routes/autoRunRouter";
 
-import { config } from "dotenv";
-import { sendEmail, sendEmailMessage } from "./utils/email";
-config();
+import { sendEmailMessage } from "./utils/email";
 
 const app: Express = express();
 
@@ -30,8 +27,8 @@ app.use(
   })
 );
 
-// Logging mechanisms
-app.use(routeLogger());
+// // Logging mechanisms
+// app.use(routeLogger());
 
 // Define our endpoints (routers) that are made available for our API
 app.use("/", indexRouter);
@@ -41,10 +38,10 @@ app.use("/budget", budgetRouter);
 app.use("/user", userRouter);
 app.use("/autoRun", autoRunRouter);
 
-// Create a "shared" lobal connection pool for SQL Server queries
-createSharedConnectionPool().then((pool) => {
-  app.locals.db = pool;
-});
+// // Create a "shared" lobal connection pool for SQL Server queries
+// createSharedConnectionPool().then((pool) => {
+//   app.locals.db = pool;
+// });
 
 // success handler
 app.use(async function (
@@ -62,7 +59,8 @@ app.use(async function (
   }
 
   const endpoint = req.method + " " + req.url;
-  await logInfo(req, "Success", res.statusCode, endpoint, data.message);
+  log("Request Info: ", res.statusCode, endpoint);
+  log(data.message);
 
   // render the error page
   return res.status(200).json(data.data);
@@ -86,7 +84,7 @@ app.use(async function (
 
   console.log("err", err);
   const endpoint = req.method + " " + req.url;
-  await logInfo(req, "Error", err.status || 500, endpoint, err.message);
+  log(req, "Error", err.status || 500, endpoint, err.message);
 
   await sendEmailMessage({
     from: "Evercent API <nblaisdell2@gmail.com>",

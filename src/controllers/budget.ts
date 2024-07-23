@@ -1,56 +1,30 @@
 import { Request, Response, NextFunction } from "express";
-import ynab, {
-  GetURL_YNABAuthorizationPage,
-  getNewAccessTokens,
-  YnabReq,
-} from "../utils/ynab";
-import { log } from "../utils/log";
-import { execute, sqlErr } from "../utils/sql";
 import {
-  FAKE_BUDGET_ID,
-  createCategories,
-  getBudget,
+  authorizeBudget,
+  getBudgetsList,
+  GetURL_YNABAuthorizationPage,
+  switchBudget,
   updateBudgetCategoryAmount,
-} from "../model/budget";
+} from "evercent";
 
-const openURL = (url: string) => {
-  const urlFormatted = url.replace(/&/g, "^&");
-  const start =
-    process.platform == "darwin"
-      ? "open"
-      : process.platform == "win32"
-      ? "start"
-      : "xdg-open";
-  require("child_process").exec(start + " " + urlFormatted);
-};
-
-export const connectToYNAB = async function (
+export const connectToYNABReq = async function (
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   const { UserID } = req.body;
-
   const url = GetURL_YNABAuthorizationPage(UserID as string);
-  // openURL(url);
-  // res.redirect(url);
   next({ data: { url }, message: "Connecting to YNAB for user: " + UserID });
 };
 
-export const getBudgetsList = async function (
+export const getBudgetsListReq = async function (
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   const { UserID } = req.query;
 
-  const budgets = await ynab(
-    req,
-    next,
-    UserID as string,
-    FAKE_BUDGET_ID,
-    YnabReq.getBudgetsList
-  );
+  const budgets = await getBudgetsList(UserID as string);
   if (!budgets) return;
 
   next({
@@ -59,32 +33,23 @@ export const getBudgetsList = async function (
   });
 };
 
-export const switchBudget = async function (
+export const switchBudgetReq = async function (
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   const { UserID, NewBudgetID } = req.body;
 
-  const budget = await ynab(req, next, UserID, NewBudgetID, YnabReq.getBudget);
-  if (!budget) return;
-
-  const newCategories = createCategories(budget.categories);
-
-  const queryRes = await execute(req, "spEV_UpdateInitialYNABDetails", [
-    { name: "UserID", value: UserID },
-    { name: "NewBudgetID", value: NewBudgetID },
-    { name: "Details", value: JSON.stringify({ details: newCategories }) },
-  ]);
-  if (sqlErr(next, queryRes)) return;
+  const result = await switchBudget(UserID, NewBudgetID);
+  if (!result) return;
 
   next({
-    data: { status: "Budgets switched successfully!" },
-    message: "Budgets switched successfully!",
+    data: { status: result },
+    message: result,
   });
 };
 
-export const updateCategoryAmount = async function (
+export const updateCategoryAmountReq = async function (
   req: Request,
   res: Response,
   next: NextFunction
@@ -92,8 +57,6 @@ export const updateCategoryAmount = async function (
   const { UserID, BudgetID, CategoryID, Month, NewBudgetedAmount } = req.body;
 
   const result = await updateBudgetCategoryAmount(
-    req,
-    next,
     UserID,
     BudgetID,
     CategoryID,
@@ -108,49 +71,12 @@ export const updateCategoryAmount = async function (
   });
 };
 
-export const authorizeBudget = async function (
+export const authorizeBudgetReq = async function (
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   const { code, state: userID } = req.query;
-
-  const newTokens = await getNewAccessTokens(next, code as string);
-  if (!newTokens) return;
-
-  // Save token details in DB for this user
-  let sqlRes = await execute(req, "spEV_YNAB_SaveTokenDetails", [
-    { name: "UserID", value: userID },
-    { name: "AccessToken", value: newTokens.accessToken },
-    { name: "RefreshToken", value: newTokens.refreshToken },
-    { name: "ExpirationDate", value: newTokens.expirationDate },
-  ]);
-  if (sqlErr(next, sqlRes)) return;
-
-  // 1. Use the YNAB API to obtain the initial budget details for this user
-  //    before saving the token details to the DB
-  const budget = await ynab(
-    req,
-    next,
-    userID as string,
-    FAKE_BUDGET_ID,
-    YnabReq.getBudget
-  );
-  if (!budget) return;
-
-  const { id, categories } = budget;
-
-  const newBudgetID = id;
-  const newCategories = createCategories(categories);
-
-  // 2. Use a separate query to save the token details AND the budget/categories
-  //    at the same time, so we only have to run a single query
-  sqlRes = await execute(req, "spEV_UpdateInitialYNABDetails", [
-    { name: "UserID", value: userID },
-    { name: "NewBudgetID", value: newBudgetID },
-    { name: "Details", value: JSON.stringify({ details: newCategories }) },
-  ]);
-  if (sqlErr(next, sqlRes)) return;
-
-  res.redirect(process.env.CLIENT_BASE_URL as string);
+  const redirectURL = await authorizeBudget(userID as string, code as string);
+  if (redirectURL) res.redirect(redirectURL as string);
 };
