@@ -15,6 +15,7 @@ export const connectToYNABReq = async function (
 ) {
   const { UserID } = req.body;
   const url = GetURL_YNABAuthorizationPage(UserID as string);
+
   next({ data: { url }, message: "Connecting to YNAB for user: " + UserID });
 };
 
