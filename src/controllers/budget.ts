@@ -6,6 +6,7 @@ import {
   switchBudget,
   updateBudgetCategoryAmount,
 } from "evercent";
+import { sendExpressResponse, throwExpressError } from "../app";
 
 export const connectToYNABReq = async function (
   req: Request,
@@ -24,13 +25,8 @@ export const getBudgetsListReq = async function (
 ) {
   const { UserID } = req.query;
 
-  const budgets = await getBudgetsList(UserID as string);
-  if (!budgets) return;
-
-  next({
-    data: budgets,
-    message: "Loaded all Budgets list for user: " + UserID,
-  });
+  const result = await getBudgetsList(UserID as string);
+  return sendExpressResponse(next, result);
 };
 
 export const switchBudgetReq = async function (
@@ -41,12 +37,7 @@ export const switchBudgetReq = async function (
   const { UserID, NewBudgetID } = req.body;
 
   const result = await switchBudget(UserID, NewBudgetID);
-  if (!result) return;
-
-  next({
-    data: { status: result },
-    message: result,
-  });
+  return sendExpressResponse(next, result);
 };
 
 export const updateCategoryAmountReq = async function (
@@ -63,12 +54,7 @@ export const updateCategoryAmountReq = async function (
     Month,
     NewBudgetedAmount
   );
-  if (!result) return;
-
-  next({
-    data: result,
-    message: result,
-  });
+  return sendExpressResponse(next, result);
 };
 
 export const authorizeBudgetReq = async function (
@@ -77,6 +63,8 @@ export const authorizeBudgetReq = async function (
   next: NextFunction
 ) {
   const { code, state: userID } = req.query;
-  const redirectURL = await authorizeBudget(userID as string, code as string);
-  if (redirectURL) res.redirect(redirectURL as string);
+  const result = await authorizeBudget(userID as string, code as string);
+
+  if (result.err) return throwExpressError(next, result.err);
+  if (result.data) res.redirect(result.data.redirectURL as string);
 };

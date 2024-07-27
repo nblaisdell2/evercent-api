@@ -5,6 +5,7 @@ import {
   runAutomation,
   saveAutoRunDetails,
 } from "evercent";
+import { sendExpressResponse } from "../app";
 
 export const saveAutoRunDetailsReq = async function (
   req: Request,
@@ -19,15 +20,7 @@ export const saveAutoRunDetailsReq = async function (
     RunTime,
     ToggledCategories
   );
-  if (!result) return;
-
-  next({
-    data: result,
-    message: JSON.stringify({
-      NewRunTime: RunTime,
-      ToggledCategories: ToggledCategories,
-    }),
-  });
+  return sendExpressResponse(next, result);
 };
 
 export const cancelAutoRunsReq = async function (
@@ -38,12 +31,7 @@ export const cancelAutoRunsReq = async function (
   const { UserID, BudgetID } = req.body;
 
   const result = await cancelAutoRuns(UserID, BudgetID);
-  if (!result) return;
-
-  next({
-    data: result,
-    message: result,
-  });
+  return sendExpressResponse(next, result);
 };
 
 export const lockAutoRunsReq = async function (
@@ -52,12 +40,7 @@ export const lockAutoRunsReq = async function (
   next: NextFunction
 ) {
   const result = await lockAutoRuns();
-  if (!result) return;
-
-  next({
-    data: result,
-    message: result,
-  });
+  return sendExpressResponse(next, result);
 };
 
 export const runAutomationReq = async function (
@@ -66,9 +49,5 @@ export const runAutomationReq = async function (
   next: NextFunction
 ) {
   const result = await runAutomation();
-
-  next({
-    data: { status: result },
-    message: result,
-  });
+  return sendExpressResponse(next, result);
 };

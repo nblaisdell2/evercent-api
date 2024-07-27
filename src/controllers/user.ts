@@ -5,6 +5,7 @@ import {
   updateMonthsAheadTarget,
   updateUserDetails,
 } from "evercent";
+import { sendExpressResponse } from "../app";
 
 export const getAllUserDataReq = async function (
   req: Request,
@@ -12,13 +13,9 @@ export const getAllUserDataReq = async function (
   next: NextFunction
 ) {
   const { UserEmail } = req.query;
-  let allData = await getAllEvercentData(UserEmail as string);
-  if (!allData) return;
 
-  next({
-    data: allData,
-    message: "All Data Loaded for user: " + allData?.userData?.username,
-  });
+  let result = await getAllEvercentData(UserEmail as string);
+  return sendExpressResponse(next, result);
 };
 
 export const updateUserDetailsReq = async function (
@@ -29,25 +26,14 @@ export const updateUserDetailsReq = async function (
   const { UserID, BudgetID, MonthlyIncome, PayFrequency, NextPaydate } =
     req.body;
 
-  const data = await updateUserDetails(
+  const result = await updateUserDetails(
     UserID,
     BudgetID,
     MonthlyIncome,
     PayFrequency,
     NextPaydate
   );
-  if (!data) return;
-
-  next({
-    data,
-    message: JSON.stringify({
-      UserID,
-      BudgetID,
-      MonthlyIncome,
-      PayFrequency,
-      NextPaydate,
-    }),
-  });
+  return sendExpressResponse(next, result);
 };
 
 export const updateCategoryDetailsReq = async function (
@@ -57,13 +43,8 @@ export const updateCategoryDetailsReq = async function (
 ) {
   const { UserID, BudgetID, Details } = req.body;
 
-  const newCategories = await updateCategoryDetails(UserID, BudgetID, Details);
-  if (!newCategories) return;
-
-  next({
-    data: newCategories,
-    message: "Categories Updated Successfully",
-  });
+  const result = await updateCategoryDetails(UserID, BudgetID, Details);
+  return sendExpressResponse(next, result);
 };
 
 export const updateMonthsAheadTargetReq = async function (
@@ -73,12 +54,6 @@ export const updateMonthsAheadTargetReq = async function (
 ) {
   const { UserID, BudgetID, NewTarget } = req.body;
 
-  const newTarget = await updateMonthsAheadTarget(UserID, BudgetID, NewTarget);
-  if (!newTarget) return;
-
-  next({
-    data: newTarget,
-    message:
-      "Updated Months Ahead Target to '" + newTarget + "' for user: " + UserID,
-  });
+  const result = await updateMonthsAheadTarget(UserID, BudgetID, NewTarget);
+  return sendExpressResponse(next, result);
 };

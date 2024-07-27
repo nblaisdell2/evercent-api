@@ -11,6 +11,7 @@ import userRouter from "./routes/userRouter";
 import autoRunRouter from "./routes/autoRunRouter";
 
 import { sendEmailMessage } from "./utils/email";
+import { EvercentResponse } from "evercent";
 
 const app: Express = express();
 
@@ -38,11 +39,6 @@ app.use("/budget", budgetRouter);
 app.use("/user", userRouter);
 app.use("/autoRun", autoRunRouter);
 
-// // Create a "shared" lobal connection pool for SQL Server queries
-// createSharedConnectionPool().then((pool) => {
-//   app.locals.db = pool;
-// });
-
 // success handler
 app.use(async function (
   data: {
@@ -62,8 +58,8 @@ app.use(async function (
   log("Request Info: ", res.statusCode, endpoint);
   log(data.message);
 
-  // render the error page
-  return res.status(200).json(data.data);
+  // return the data to the user
+  return res.json(data);
 });
 
 // catch 404 and forward to error handler
@@ -80,11 +76,9 @@ app.use(async function (
 ) {
   // set locals, only providing error in development
   res.locals.error = req.app.get("env") === "development" ? err : {};
-  logError(err.message);
 
-  console.log("err", err);
   const endpoint = req.method + " " + req.url;
-  log(req, "Error", err.status || 500, endpoint, err.message);
+  logError(err.status || 500, endpoint, err.message);
 
   await sendEmailMessage({
     from: "Evercent API <nblaisdell2@gmail.com>",
@@ -95,10 +89,27 @@ app.use(async function (
   });
 
   // render the error page
-  return res
-    .status(err.status || 500)
-    .json({ error: "Error occurred with request." });
+  return res.status(err.status || 500).json({ error: err.message });
 });
+
+export function sendExpressResponse<T>(
+  next: NextFunction,
+  response: EvercentResponse<T>
+) {
+  if (response.err) return throwExpressError(next, response.err);
+  return getExpressResponse(next, response.data, response.message);
+}
+
+export const getExpressResponse = (
+  next: NextFunction,
+  data: any,
+  message?: string | null | undefined
+) => {
+  next({
+    data,
+    message,
+  });
+};
 
 export const throwExpressError = (
   next: NextFunction,
