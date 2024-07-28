@@ -47,12 +47,13 @@ const sendErrorEmail = async (
   });
 };
 
-const checkAPIStatus = async () => {
+const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
+  const msg = "API is up-and-running!";
   return {
-    data: null,
+    data: msg,
     err: null,
-    message: "API is up-and-running!",
-  } as EvercentResponse<string>;
+    message: msg,
+  };
 };
 
 export type FnType<T> = T extends (...args: any) => any
@@ -87,7 +88,7 @@ export const getProc = (
       .input(z.custom<Parameters<typeof fn>[0]>())
       .mutation(async (opts) => {
         const response = await fn(opts.input);
-        if (response.err) sendErrorEmail(true, response, opts);
+        if (response.err) sendErrorEmail(mutate, response, opts);
         return response;
       });
   } else {
@@ -95,7 +96,7 @@ export const getProc = (
       .input(z.custom<Parameters<typeof fn>[0]>())
       .query(async (opts) => {
         const response = await fn(opts.input);
-        if (response.err) sendErrorEmail(false, response, opts);
+        if (response.err) sendErrorEmail(mutate, response, opts);
         return response;
       });
   }
