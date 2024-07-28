@@ -1,17 +1,14 @@
-import express, { json, urlencoded } from "express";
 import type { Express, Request, Response, NextFunction } from "express";
+import express, { json, urlencoded } from "express";
 import createError, { HttpError } from "http-errors";
 import cors from "cors";
 
+import * as trpcExpress from "@trpc/server/adapters/express";
+
 import { log, logError } from "./utils/log";
 
-import indexRouter from "./routes/indexRouter";
-import budgetRouter from "./routes/budgetRouter";
-import userRouter from "./routes/userRouter";
-import autoRunRouter from "./routes/autoRunRouter";
-
 import { sendEmailMessage } from "./utils/email";
-import { EvercentResponse } from "evercent";
+import { appRouter, createContext } from "./trpc";
 
 const app: Express = express();
 
@@ -31,13 +28,12 @@ app.use(
 // // Logging mechanisms
 // app.use(routeLogger());
 
-// Define our endpoints (routers) that are made available for our API
-app.use("/", indexRouter);
-
-// Evercent endpoints
-app.use("/budget", budgetRouter);
-app.use("/user", userRouter);
-app.use("/autoRun", autoRunRouter);
+// tRPC
+const trpcMiddleware = trpcExpress.createExpressMiddleware({
+  router: appRouter,
+  createContext,
+});
+app.use("/", trpcMiddleware);
 
 // success handler
 app.use(async function (
@@ -92,26 +88,7 @@ app.use(async function (
   return res.status(err.status || 500).json({ error: err.message });
 });
 
-export function sendExpressResponse<T>(
-  next: NextFunction,
-  response: EvercentResponse<T>
-) {
-  if (response.err) return throwExpressError(next, response.err);
-  return getExpressResponse(next, response.data, response.message);
-}
-
-export const getExpressResponse = (
-  next: NextFunction,
-  data: any,
-  message?: string | null | undefined
-) => {
-  next({
-    data,
-    message,
-  });
-};
-
-export const throwExpressError = (
+const throwExpressError = (
   next: NextFunction,
   message: string,
   statusCode: number = 500
