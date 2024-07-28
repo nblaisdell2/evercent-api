@@ -1,5 +1,4 @@
 import { render } from "@react-email/render";
-import { getAllEvercentData } from "evercent";
 import { createTransport } from "nodemailer";
 
 export async function sendEmail({
